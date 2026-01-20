@@ -105,14 +105,12 @@ export function Header({
     <header
       className={cn(
         'sticky top-0 z-40',
-        // Light mode styles
-        'bg-white/90 border-b border-slate-200/60',
-        'shadow-[0_1px_3px_rgba(0,0,0,0.02)]',
-        // Dark mode styles
-        'dark:bg-slate-900/90 dark:border-slate-700/50',
-        'dark:shadow-none',
-        // Common
-        'backdrop-blur-xl backdrop-saturate-150',
+        // Enhanced glassmorphism
+        'bg-white/60 dark:bg-slate-900/60',
+        'backdrop-blur-2xl backdrop-saturate-200',
+        'border-b border-white/40 dark:border-white/5',
+        'shadow-[0_4px_30px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
         'px-4 py-3',
         className
       )}
@@ -151,14 +149,15 @@ export function Header({
         <button
           onClick={onSearchClick}
           className={cn(
-            'flex-1 max-w-md flex items-center gap-3 px-4 py-2.5 rounded-xl',
-            // Light mode
-            'bg-slate-100/80 border border-slate-200/60',
-            'text-slate-500 hover:bg-slate-100 hover:border-slate-300/60',
-            // Dark mode
-            'dark:bg-slate-800/80 dark:border-slate-700/50',
-            'dark:text-slate-400 dark:hover:bg-slate-700/80',
-            // Common
+            'flex-1 max-w-md flex items-center gap-3 px-4 py-2.5 rounded-2xl',
+            // Neumorphic inset style
+            'bg-slate-100/80 dark:bg-slate-800/50',
+            'shadow-[inset_2px_2px_4px_rgba(174,184,194,0.3),inset_-2px_-2px_4px_rgba(255,255,255,0.7)]',
+            'dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3),inset_-2px_-2px_4px_rgba(60,70,85,0.2)]',
+            'border border-white/40 dark:border-white/5',
+            'text-slate-500 dark:text-slate-400',
+            'hover:shadow-[inset_1px_1px_2px_rgba(174,184,194,0.3),inset_-1px_-1px_2px_rgba(255,255,255,0.7)]',
+            'dark:hover:shadow-[inset_1px_1px_2px_rgba(0,0,0,0.3),inset_-1px_-1px_2px_rgba(60,70,85,0.2)]',
             'transition-all duration-200'
           )}
         >
@@ -237,10 +236,13 @@ export function Header({
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
                   className={cn(
-                    'absolute right-0 top-full mt-2 w-72 p-4 rounded-2xl',
-                    'bg-white dark:bg-slate-800',
-                    'border border-slate-200 dark:border-slate-700',
-                    'shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50',
+                    'absolute right-0 top-full mt-2 w-72 p-4 rounded-3xl',
+                    // Glassmorphism
+                    'bg-white/80 dark:bg-slate-900/80',
+                    'backdrop-blur-2xl backdrop-saturate-200',
+                    'border border-white/50 dark:border-white/10',
+                    'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.5)]',
+                    'dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]',
                     'z-50'
                   )}
                 >

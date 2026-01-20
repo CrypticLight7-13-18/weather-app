@@ -166,12 +166,20 @@ export function CurrentWeather({
         'relative overflow-hidden',
         'bg-linear-to-br',
         condition.gradient,
+        // Enhanced glassmorphism
+        'backdrop-blur-2xl',
+        'border border-white/30 dark:border-white/10',
+        'shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_0_80px_rgba(255,255,255,0.1)]',
+        'dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_0_80px_rgba(255,255,255,0.02)]',
         className
       )}
     >
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.4),transparent_70%)]" />
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.3),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.15),transparent_40%)]" />
+        {/* Noise texture for glass effect */}
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2EpIi8+PC9zdmc+')]" />
       </div>
 
       <div className="relative z-10">
@@ -392,17 +400,23 @@ function QuickStat({
   return (
     <motion.div 
       variants={quickStatVariants}
+      whileHover={{ scale: 1.02, y: -2 }}
       className={cn(
-        'flex flex-col gap-1 p-2.5 rounded-lg',
-        'bg-white/10 backdrop-blur-sm',
-        textColor
+        'flex flex-col gap-1.5 p-3 rounded-2xl',
+        // Glassmorphism effect
+        'bg-white/20 dark:bg-black/10',
+        'backdrop-blur-md',
+        'border border-white/30 dark:border-white/10',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.05)]',
+        textColor,
+        'transition-all duration-200'
       )}
     >
-      <div className="flex items-center gap-1.5 opacity-70">
+      <div className="flex items-center gap-1.5 opacity-80">
         {icon}
-        <span className="text-xs">{label}</span>
+        <span className="text-xs font-medium">{label}</span>
       </div>
-      <span className="text-sm font-semibold">{value}</span>
+      <span className="text-sm font-bold">{value}</span>
     </motion.div>
   );
 }

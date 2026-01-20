@@ -169,9 +169,13 @@ export function HistoricalChart({ data, settings, className }: HistoricalChartPr
       {/* Key Insights Banner */}
       <div className="px-4 pb-4">
         <div className={cn(
-          'flex items-center gap-4 p-3 rounded-xl overflow-x-auto',
-          'bg-linear-to-r from-slate-50 to-slate-100/50',
-          'dark:from-slate-800/50 dark:to-slate-700/30',
+          'flex items-center gap-4 p-3 rounded-2xl overflow-x-auto',
+          // Glassmorphism
+          'bg-white/40 dark:bg-white/5',
+          'backdrop-blur-md',
+          'border border-white/50 dark:border-white/10',
+          'shadow-[0_4px_16px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.5)]',
+          'dark:shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
           '[&::-webkit-scrollbar]:hidden'
         )}>
           <InsightBadge
@@ -346,7 +350,13 @@ function InsightBadge({
   color: string;
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/50 dark:bg-slate-900/30 shrink-0">
+    <div className={cn(
+      'flex items-center gap-2 px-3 py-2 rounded-xl shrink-0',
+      // Neumorphic style
+      'bg-white/60 dark:bg-slate-800/50',
+      'shadow-[2px_2px_4px_rgba(174,184,194,0.3),-2px_-2px_4px_rgba(255,255,255,0.8)]',
+      'dark:shadow-[2px_2px_4px_rgba(0,0,0,0.3),-2px_-2px_4px_rgba(60,70,85,0.2)]'
+    )}>
       <span className={color}>{icon}</span>
       <div>
         <p className="text-[10px] text-slate-400 uppercase tracking-wider">{label}</p>
@@ -371,10 +381,16 @@ function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02, y: -2 }}
       className={cn(
-        'p-3 rounded-xl',
-        'bg-slate-50/50 dark:bg-slate-800/30',
-        'border border-slate-100 dark:border-slate-700/30'
+        'p-3 rounded-2xl',
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/40',
+        'backdrop-blur-sm',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_16px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.5)]',
+        'dark:shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       <div className="flex items-center gap-2 mb-1">

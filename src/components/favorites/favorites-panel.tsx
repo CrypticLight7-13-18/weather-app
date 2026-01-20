@@ -73,11 +73,14 @@ export function FavoritesPanel({ onSelect, className }: FavoritesPanelProps) {
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'group flex items-center gap-3 p-3 rounded-xl cursor-pointer',
+                'group flex items-center gap-3 p-3 rounded-2xl cursor-pointer',
                 'transition-all duration-200',
-                // Light mode
-                'hover:bg-slate-100',
-                // Dark mode
+                // Glassmorphism on hover
+                'hover:bg-white/60 dark:hover:bg-white/5',
+                'hover:backdrop-blur-sm',
+                'hover:shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.5)]',
+                'dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+                // Drag state
                 'dark:hover:bg-slate-800',
                 draggedIndex === index && 'opacity-50'
               )}

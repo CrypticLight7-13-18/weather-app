@@ -83,17 +83,21 @@ function HumidityCard({ humidity }: { humidity: number }) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -2 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       {/* Background fill indicator */}
       <div 
-        className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t to-transparent opacity-20', bgColor)}
+        className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t to-transparent opacity-30', bgColor)}
         style={{ height: `${humidity}%` }}
       />
       
@@ -150,9 +154,13 @@ function WindCard({
       whileHover={{ scale: 1.02 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       <div className="flex items-center justify-between mb-3">
@@ -218,9 +226,13 @@ function UVIndexCard({ uvIndex }: { uvIndex: number }) {
       whileHover={{ scale: 1.02 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       <div className="flex items-center justify-between mb-3">
@@ -288,9 +300,13 @@ function PressureCard({
       whileHover={{ scale: 1.02 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       <div className="flex items-center justify-between mb-3">
@@ -342,9 +358,13 @@ function CloudCoverCard({ cloudCover }: { cloudCover: number }) {
       whileHover={{ scale: 1.02 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       {/* Animated clouds background */}
@@ -445,9 +465,13 @@ function FeelsLikeCard({
       whileHover={{ scale: 1.02 }}
       className={cn(
         'relative overflow-hidden rounded-2xl p-4',
-        'bg-gradient-to-br from-slate-50 to-slate-100/50',
-        'dark:from-slate-800/80 dark:to-slate-800/40',
-        'border border-slate-200/50 dark:border-slate-700/50'
+        // Glassmorphism
+        'bg-white/50 dark:bg-slate-800/50',
+        'backdrop-blur-xl',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        'transition-all duration-200'
       )}
     >
       <div className="flex items-center justify-between mb-3">

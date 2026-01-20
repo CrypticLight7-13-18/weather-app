@@ -130,12 +130,20 @@ export default function HomePage() {
 
   return (
     <div className={cn(
-      'min-h-screen transition-colors duration-300',
-      // Light mode background
-      'bg-linear-to-br from-slate-50 via-sky-50/30 to-slate-100',
-      // Dark mode background
-      'dark:from-slate-900 dark:via-slate-900 dark:to-slate-800'
+      'min-h-screen transition-colors duration-500 relative overflow-hidden',
+      // Light mode - soft gradient with mesh
+      'bg-gradient-to-br from-slate-100 via-blue-50/50 to-indigo-100/30',
+      // Dark mode - deep gradient
+      'dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/50'
     )}>
+      {/* Animated background orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-gradient-to-br from-blue-400/20 to-cyan-300/20 dark:from-blue-600/10 dark:to-cyan-500/10 blur-3xl" />
+        <div className="absolute top-1/2 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-purple-400/15 to-pink-300/15 dark:from-purple-600/10 dark:to-pink-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 right-1/3 w-72 h-72 rounded-full bg-gradient-to-br from-amber-300/20 to-orange-300/15 dark:from-amber-600/10 dark:to-orange-500/10 blur-3xl" />
+      </div>
+
+      <div className="relative z-10">
       <Header
         onSearchClick={() => setIsSearchOpen(true)}
         onRefresh={refresh}
@@ -241,6 +249,7 @@ export default function HomePage() {
           onClose={() => setIsSearchOpen(false)}
         />
       )}
+      </div>
     </div>
   );
 }

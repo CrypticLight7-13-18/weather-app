@@ -148,13 +148,6 @@ function HourlyItem({
   tempPosition: number;
 }) {
   // Color based on temperature position (0 = cold/blue, 1 = hot/orange)
-  const getTempColor = () => {
-    if (tempPosition < 0.3) return 'from-blue-500/10 to-blue-600/5';
-    if (tempPosition < 0.6) return 'from-emerald-500/10 to-emerald-600/5';
-    if (tempPosition < 0.8) return 'from-amber-500/10 to-amber-600/5';
-    return 'from-orange-500/10 to-orange-600/5';
-  };
-
   const getTempTextColor = () => {
     if (tempPosition < 0.3) return 'text-blue-600 dark:text-blue-400';
     if (tempPosition < 0.6) return 'text-emerald-600 dark:text-emerald-400';
@@ -173,23 +166,30 @@ function HourlyItem({
       }}
       whileHover={{ 
         scale: 1.03,
-        y: -1,
+        y: -2,
       }}
       className={cn(
-        'relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl min-w-[68px]',
-        'transition-shadow duration-200 cursor-default',
-        'border border-transparent',
+        'relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[68px]',
+        'transition-all duration-200 cursor-default',
         isNow
           ? cn(
-              'bg-linear-to-b from-blue-500/20 to-blue-600/10',
-              'border-blue-300/50 dark:border-blue-600/50',
-              'shadow-md shadow-blue-500/10'
+              // Glassmorphism for "Now"
+              'bg-linear-to-b from-blue-500/30 to-blue-600/20',
+              'backdrop-blur-md',
+              'border border-blue-300/50 dark:border-blue-500/30',
+              'shadow-[0_4px_16px_rgba(59,130,246,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]',
+              'dark:shadow-[0_4px_16px_rgba(59,130,246,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]'
             )
           : cn(
-              'bg-linear-to-b',
-              getTempColor(),
-              'hover:border-slate-200/80 dark:hover:border-slate-600/50',
-              'hover:shadow-sm'
+              // Soft glass effect
+              'bg-linear-to-b from-white/40 to-white/20',
+              'dark:from-white/10 dark:to-white/5',
+              'backdrop-blur-sm',
+              'border border-white/40 dark:border-white/10',
+              'shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.5)]',
+              'dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+              'hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]',
+              'dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]'
             )
       )}
     >

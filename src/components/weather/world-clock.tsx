@@ -121,16 +121,19 @@ function AnalogClock({
   const minuteAngle = (minutes + seconds / 60) * 6;
   const secondAngle = seconds * 6;
   
-  const dimensions = size === 'sm' ? 40 : 56;
+  const dimensions = size === 'sm' ? 44 : 60;
   const center = dimensions / 2;
   
   return (
     <div 
       className={cn(
         'relative rounded-full flex items-center justify-center shrink-0',
+        // Neumorphic clock face
         isDay 
-          ? 'bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-900/40 dark:to-blue-900/40' 
-          : 'bg-gradient-to-br from-indigo-100 to-slate-200 dark:from-indigo-900/40 dark:to-slate-800/40'
+          ? 'bg-gradient-to-br from-sky-50 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50' 
+          : 'bg-gradient-to-br from-indigo-100 to-slate-200 dark:from-indigo-900/50 dark:to-slate-800/50',
+        'shadow-[4px_4px_8px_rgba(174,184,194,0.4),-4px_-4px_8px_rgba(255,255,255,0.8),inset_0_0_4px_rgba(0,0,0,0.05)]',
+        'dark:shadow-[4px_4px_8px_rgba(0,0,0,0.4),-4px_-4px_8px_rgba(60,70,85,0.2),inset_0_0_4px_rgba(0,0,0,0.1)]'
       )}
       style={{ width: dimensions, height: dimensions }}
     >
@@ -491,11 +494,22 @@ function ClockRow({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
       className={cn(
-        'group flex items-center gap-3 p-2 rounded-xl',
-        'transition-colors duration-150',
+        'group flex items-center gap-3 p-2.5 rounded-2xl',
+        'transition-all duration-200',
         isLocal
-          ? 'bg-blue-50/60 dark:bg-blue-900/20'
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+          ? cn(
+              // Glassmorphism for local
+              'bg-gradient-to-r from-blue-500/15 to-cyan-500/10',
+              'backdrop-blur-sm',
+              'border border-blue-200/50 dark:border-blue-500/20',
+              'shadow-[0_2px_8px_rgba(59,130,246,0.1),inset_0_1px_0_rgba(255,255,255,0.5)]',
+              'dark:shadow-[0_2px_8px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]'
+            )
+          : cn(
+              'hover:bg-white/50 dark:hover:bg-white/5',
+              'hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]',
+              'dark:hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]'
+            )
       )}
     >
       {/* Analog clock */}

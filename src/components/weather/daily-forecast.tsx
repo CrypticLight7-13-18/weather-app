@@ -112,16 +112,26 @@ function DailyItem({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
+      whileHover={{ x: 4, scale: 1.01 }}
       className={cn(
-        'flex items-center gap-3 py-3 px-3 rounded-xl',
+        'flex items-center gap-3 py-3 px-3 rounded-2xl',
         'transition-all duration-200',
         isToday
           ? cn(
-              'bg-gradient-to-r from-blue-50 to-sky-50/50',
-              'dark:from-blue-900/20 dark:to-sky-900/10',
-              'ring-1 ring-blue-200/50 dark:ring-blue-700/30'
+              // Glassmorphism for today
+              'bg-gradient-to-r from-blue-500/15 to-cyan-500/10',
+              'backdrop-blur-sm',
+              'border border-blue-200/50 dark:border-blue-500/20',
+              'shadow-[0_4px_12px_rgba(59,130,246,0.1),inset_0_1px_0_rgba(255,255,255,0.5)]',
+              'dark:shadow-[0_4px_12px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]'
             )
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+          : cn(
+              // Glass hover for other days
+              'hover:bg-white/50 dark:hover:bg-white/5',
+              'hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.5)]',
+              'dark:hover:shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]',
+              'border border-transparent hover:border-white/40 dark:hover:border-white/10'
+            )
       )}
     >
       {/* Day name and date */}
