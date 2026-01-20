@@ -6,8 +6,9 @@ import { HourlyForecast as HourlyForecastType } from '@/types/weather';
 import { TemperatureUnit } from '@/types';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import { WeatherIcon } from './weather-icon';
-import { Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Droplets, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface HourlyForecastProps {
   hourly: HourlyForecastType[];
@@ -21,6 +22,12 @@ export function HourlyForecast({ hourly, temperatureUnit = 'celsius', className 
   const [canScrollRight, setCanScrollRight] = useState(true);
 
   const next24Hours = hourly.slice(0, 24);
+
+  // Find min/max temps for the gradient indicator
+  const temps = next24Hours.map(h => h.temperature);
+  const minTemp = Math.min(...temps);
+  const maxTemp = Math.max(...temps);
+  const tempRange = maxTemp - minTemp || 1;
 
   const updateScrollState = () => {
     const el = scrollRef.current;
@@ -40,51 +47,88 @@ export function HourlyForecast({ hourly, temperatureUnit = 'celsius', className 
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const scrollAmount = direction === 'left' ? -200 : 200;
+    const scrollAmount = direction === 'left' ? -240 : 240;
     el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
   return (
-    <Card className={className}>
+    <Card className={cn('overflow-hidden', className)}>
       <CardHeader>
-        <CardTitle>Hourly Forecast</CardTitle>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-slate-400" />
+          <CardTitle>Hourly Forecast</CardTitle>
+        </div>
         <div className="flex gap-1">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
             className={cn(
-              'p-1.5 rounded-lg transition-colors',
+              'p-2 rounded-full transition-all duration-200',
               canScrollLeft
-                ? 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50'
             )}
             aria-label="Scroll left"
           >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
+            <ChevronLeft className="h-4 w-4" />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
             className={cn(
-              'p-1.5 rounded-lg transition-colors',
+              'p-2 rounded-full transition-all duration-200',
               canScrollRight
-                ? 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50'
             )}
             aria-label="Scroll right"
           >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+            <ChevronRight className="h-4 w-4" />
+          </motion.button>
         </div>
       </CardHeader>
 
-      <div
-        ref={scrollRef}
-        className="flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-      >
-        {next24Hours.map((hour, index) => (
-          <HourlyItem key={hour.time} hour={hour} isNow={index === 0} temperatureUnit={temperatureUnit} />
-        ))}
+      {/* Scrollable container with fade edges */}
+      <div className="relative">
+        {/* Left fade */}
+        <div 
+          className={cn(
+            'absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none',
+            'bg-linear-to-r from-white to-transparent dark:from-slate-800 dark:to-transparent',
+            'transition-opacity duration-200',
+            canScrollLeft ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+        
+        {/* Right fade */}
+        <div 
+          className={cn(
+            'absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none',
+            'bg-linear-to-l from-white to-transparent dark:from-slate-800 dark:to-transparent',
+            'transition-opacity duration-200',
+            canScrollRight ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+
+        <div
+          ref={scrollRef}
+          className="flex gap-2 overflow-x-auto px-1 pb-3 pt-1 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        >
+          {next24Hours.map((hour, index) => (
+            <HourlyItem 
+              key={hour.time} 
+              hour={hour} 
+              isNow={index === 0} 
+              index={index}
+              temperatureUnit={temperatureUnit}
+              tempPosition={(hour.temperature - minTemp) / tempRange}
+            />
+          ))}
+        </div>
       </div>
     </Card>
   );
@@ -93,43 +137,107 @@ export function HourlyForecast({ hourly, temperatureUnit = 'celsius', className 
 function HourlyItem({
   hour,
   isNow,
+  index,
   temperatureUnit,
+  tempPosition,
 }: {
   hour: HourlyForecastType;
   isNow: boolean;
+  index: number;
   temperatureUnit: TemperatureUnit;
+  tempPosition: number;
 }) {
+  // Color based on temperature position (0 = cold/blue, 1 = hot/orange)
+  const getTempColor = () => {
+    if (tempPosition < 0.3) return 'from-blue-500/10 to-blue-600/5';
+    if (tempPosition < 0.6) return 'from-emerald-500/10 to-emerald-600/5';
+    if (tempPosition < 0.8) return 'from-amber-500/10 to-amber-600/5';
+    return 'from-orange-500/10 to-orange-600/5';
+  };
+
+  const getTempTextColor = () => {
+    if (tempPosition < 0.3) return 'text-blue-600 dark:text-blue-400';
+    if (tempPosition < 0.6) return 'text-emerald-600 dark:text-emerald-400';
+    if (tempPosition < 0.8) return 'text-amber-600 dark:text-amber-400';
+    return 'text-orange-600 dark:text-orange-400';
+  };
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        duration: 0.3, 
+        delay: index * 0.02,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }}
+      whileHover={{ 
+        scale: 1.03,
+        y: -1,
+      }}
       className={cn(
-        'flex flex-col items-center gap-2 p-3 rounded-xl min-w-[70px]',
-        'transition-all duration-200',
+        'relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl min-w-[68px]',
+        'transition-shadow duration-200 cursor-default',
+        'border border-transparent',
         isNow
-          ? 'bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:ring-blue-700'
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+          ? cn(
+              'bg-linear-to-b from-blue-500/20 to-blue-600/10',
+              'border-blue-300/50 dark:border-blue-600/50',
+              'shadow-md shadow-blue-500/10'
+            )
+          : cn(
+              'bg-linear-to-b',
+              getTempColor(),
+              'hover:border-slate-200/80 dark:hover:border-slate-600/50',
+              'hover:shadow-sm'
+            )
       )}
     >
+      {/* Now indicator dot */}
+      {isNow && (
+        <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 flex h-1.5 w-1.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+        </span>
+      )}
+
+      {/* Time */}
       <span
         className={cn(
-          'text-xs font-medium',
+          'text-[10px] font-semibold tracking-wide',
           isNow ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'
         )}
       >
-        {isNow ? 'Now' : formatHour(hour.time)}
+        {isNow ? 'NOW' : formatHour(hour.time)}
       </span>
 
+      {/* Weather icon */}
       <WeatherIcon code={hour.weatherCode} isDay={hour.isDay} size="md" />
 
-      <span className="text-base font-semibold text-slate-900 dark:text-white">
+      {/* Temperature */}
+      <span className={cn(
+        'text-md font-bold',
+        isNow ? 'text-blue-700 dark:text-blue-300' : getTempTextColor()
+      )}>
         {formatTemperatureShort(hour.temperature, temperatureUnit)}
       </span>
 
+      {/* Precipitation indicator */}
       {hour.precipitationProbability > 0 && (
-        <div className="flex items-center gap-1 text-blue-500 dark:text-blue-400">
-          <Droplets className="h-3 w-3" />
-          <span className="text-xs">{formatPercentage(hour.precipitationProbability)}</span>
+        <div 
+          className={cn(
+            'flex items-center gap-0.5',
+            hour.precipitationProbability > 50 
+              ? 'text-blue-600 dark:text-blue-300' 
+              : 'text-blue-500/80 dark:text-blue-400/80'
+          )}
+        >
+          <Droplets className="h-2.5 w-2.5" />
+          <span className="text-[9px] font-semibold">
+            {formatPercentage(hour.precipitationProbability)}
+          </span>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
