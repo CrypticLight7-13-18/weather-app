@@ -267,7 +267,7 @@ function IconsSection({ copyCode, copiedCode }: { copyCode: (c: string, id: stri
             const info = weatherCodes.find(w => w.code === code);
             return (
               <div key={code} className="flex flex-col items-center gap-3">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+                <div className="p-6 rounded-2xl bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
                   <WeatherIconHero code={code as WeatherCode} isDay={true} />
                 </div>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{info?.label}</span>
@@ -288,14 +288,14 @@ function IconsSection({ copyCode, copiedCode }: { copyCode: (c: string, id: stri
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[0, 2].map((code) => (
             <div key={code} className="space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
                 <WeatherIcon code={code as WeatherCode} isDay={true} size="xl" />
                 <div>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Day</p>
                   <p className="text-xs text-slate-500">isDay: true</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-slate-100 dark:from-indigo-900/20 dark:to-slate-800/50">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-indigo-50 to-slate-100 dark:from-indigo-900/20 dark:to-slate-800/50">
                 <WeatherIcon code={code as WeatherCode} isDay={false} size="xl" />
                 <div>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Night</p>

@@ -96,7 +96,7 @@ function HumidityCard({ humidity }: { humidity: number }) {
     >
       {/* Background fill indicator */}
       <div 
-        className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t to-transparent opacity-30', bgColor)}
+        className={cn('absolute bottom-0 left-0 right-0 bg-linear-to-t to-transparent opacity-30', bgColor)}
         style={{ height: `${humidity}%` }}
       />
       
@@ -121,7 +121,7 @@ function HumidityCard({ humidity }: { humidity: number }) {
               initial={{ width: 0 }}
               animate={{ width: `${humidity}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className={cn('h-full rounded-full bg-gradient-to-r to-current', bgColor, color)}
+              className={cn('h-full rounded-full bg-linear-to-r to-current', bgColor, color)}
             />
           </div>
         </div>
@@ -259,7 +259,7 @@ function UVIndexCard({ uvIndex }: { uvIndex: number }) {
       {/* UV Scale */}
       <div className="mt-3">
         <div className="relative">
-          <div className="h-2 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 via-orange-400 to-purple-500" />
+          <div className="h-2 rounded-full bg-linear-to-r from-green-400 via-orange-400 to-purple-500" />
           <motion.div
             initial={{ left: 0 }}
             animate={{ left: `${percentage}%` }}
@@ -325,7 +325,7 @@ function PressureCard({
       
       {/* Pressure gauge */}
       <div className="mt-3 relative">
-        <div className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 via-slate-300 to-orange-400" />
+        <div className="h-1.5 rounded-full bg-linear-to-r from-blue-400 via-slate-300 to-orange-400" />
         <motion.div
           initial={{ left: '50%' }}
           animate={{ left: `${Math.max(0, Math.min(100, normalizedPressure))}%` }}

@@ -1,23 +1,19 @@
 'use client';
 
-import { useEffect, ReactNode, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore, ReactNode } from 'react';
 import { useAppStore } from '@/stores';
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
-// Hook to safely detect client-side mounting without setState in effect
-function useIsMounted() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
-}
+// Hydration-safe way to detect if we're on the client
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const mounted = useIsMounted();
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const { settings } = useAppStore();
 
   useEffect(() => {
