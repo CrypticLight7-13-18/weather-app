@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect } from 'react';
-import { useWeatherStore, useAppStore } from '@/stores';
+import { useWeatherStore } from '@/stores';
 import { fetchWeatherData, fetchHistoricalData } from '@/lib/api';
 import { Location } from '@/types/location';
 import { ApiError } from '@/types/api';
@@ -18,8 +18,6 @@ export function useWeather() {
     getCachedWeather,
     cacheWeather,
   } = useWeatherStore();
-
-  const { settings } = useAppStore();
 
   const loadWeather = useCallback(
     async (location: Location, skipCache = false) => {
@@ -38,10 +36,10 @@ export function useWeather() {
       setWeatherError(null);
 
       try {
+        // Always fetch in metric units - conversion happens in display
         const data = await fetchWeatherData({
           latitude: location.latitude,
           longitude: location.longitude,
-          temperatureUnit: settings.temperatureUnit,
         });
 
         setCurrentWeather(data, location);
@@ -51,7 +49,6 @@ export function useWeather() {
       }
     },
     [
-      settings.temperatureUnit,
       getCachedWeather,
       setCurrentWeather,
       setWeatherStatus,
@@ -89,7 +86,6 @@ export function useHistoricalWeather() {
     cacheHistorical,
   } = useWeatherStore();
 
-  const { settings } = useAppStore();
   const { location: currentLocation } = useWeather();
 
   const loadHistoricalData = useCallback(
@@ -109,10 +105,10 @@ export function useHistoricalWeather() {
       setHistoricalError(null);
 
       try {
+        // Always fetch in metric units - conversion happens in display
         const data = await fetchHistoricalData({
           latitude: location.latitude,
           longitude: location.longitude,
-          temperatureUnit: settings.temperatureUnit,
           days,
         });
 
@@ -123,7 +119,6 @@ export function useHistoricalWeather() {
       }
     },
     [
-      settings.temperatureUnit,
       getCachedHistorical,
       setHistoricalData,
       setHistoricalStatus,
@@ -147,4 +142,3 @@ export function useHistoricalWeather() {
     loadHistoricalData,
   };
 }
-

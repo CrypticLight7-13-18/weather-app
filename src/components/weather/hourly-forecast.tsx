@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { formatTemperatureShort, formatHour, formatPercentage } from '@/lib/utils';
 import { HourlyForecast as HourlyForecastType } from '@/types/weather';
+import { TemperatureUnit } from '@/types';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import { WeatherIcon } from './weather-icon';
 import { Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,10 +11,11 @@ import { useRef, useEffect, useState } from 'react';
 
 interface HourlyForecastProps {
   hourly: HourlyForecastType[];
+  temperatureUnit?: TemperatureUnit;
   className?: string;
 }
 
-export function HourlyForecast({ hourly, className }: HourlyForecastProps) {
+export function HourlyForecast({ hourly, temperatureUnit = 'celsius', className }: HourlyForecastProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -81,7 +83,7 @@ export function HourlyForecast({ hourly, className }: HourlyForecastProps) {
         className="flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {next24Hours.map((hour, index) => (
-          <HourlyItem key={hour.time} hour={hour} isNow={index === 0} />
+          <HourlyItem key={hour.time} hour={hour} isNow={index === 0} temperatureUnit={temperatureUnit} />
         ))}
       </div>
     </Card>
@@ -91,9 +93,11 @@ export function HourlyForecast({ hourly, className }: HourlyForecastProps) {
 function HourlyItem({
   hour,
   isNow,
+  temperatureUnit,
 }: {
   hour: HourlyForecastType;
   isNow: boolean;
+  temperatureUnit: TemperatureUnit;
 }) {
   return (
     <div
@@ -117,7 +121,7 @@ function HourlyItem({
       <WeatherIcon code={hour.weatherCode} isDay={hour.isDay} size="md" />
 
       <span className="text-base font-semibold text-slate-900 dark:text-white">
-        {formatTemperatureShort(hour.temperature)}
+        {formatTemperatureShort(hour.temperature, temperatureUnit)}
       </span>
 
       {hour.precipitationProbability > 0 && (

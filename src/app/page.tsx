@@ -183,23 +183,29 @@ export default function HomePage() {
               <CurrentWeather
                 weather={weather}
                 location={location}
-                unit={settings.temperatureUnit}
+                settings={settings}
               />
 
-              <HourlyForecast hourly={weather.hourly} />
+              <HourlyForecast
+                hourly={weather.hourly}
+                temperatureUnit={settings.temperatureUnit}
+              />
 
-              <DailyForecast daily={weather.daily} />
+              <DailyForecast
+                daily={weather.daily}
+                temperatureUnit={settings.temperatureUnit}
+              />
 
               <WeatherDetails
                 current={weather.current}
-                unit={settings.temperatureUnit}
+                settings={settings}
               />
 
               {/* Historical chart */}
               {historicalData && historicalStatus === 'success' && (
                 <HistoricalChart
                   data={historicalData}
-                  unit={settings.temperatureUnit}
+                  settings={settings}
                 />
               )}
               {historicalStatus === 'loading' && (

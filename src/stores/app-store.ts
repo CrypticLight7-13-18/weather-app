@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Location } from '@/types/location';
-import { Settings, TemperatureUnit, Theme } from '@/types';
+import { Settings, TemperatureUnit, WindSpeedUnit, PressureUnit, PrecipitationUnit, Theme } from '@/types';
 
 interface HistoryEntry {
   location: Location;
@@ -37,6 +37,9 @@ interface AppState {
   // Settings
   settings: Settings;
   setTemperatureUnit: (unit: TemperatureUnit) => void;
+  setWindSpeedUnit: (unit: WindSpeedUnit) => void;
+  setPressureUnit: (unit: PressureUnit) => void;
+  setPrecipitationUnit: (unit: PrecipitationUnit) => void;
   setTheme: (theme: Theme) => void;
 
   // Selected location (for viewing)
@@ -57,6 +60,9 @@ interface AppState {
 
 const DEFAULT_SETTINGS: Settings = {
   temperatureUnit: 'celsius',
+  windSpeedUnit: 'kmh',
+  pressureUnit: 'hpa',
+  precipitationUnit: 'mm',
   theme: 'system',
 };
 
@@ -145,6 +151,24 @@ export const useAppStore = create<AppState>()(
       setTemperatureUnit: (unit) => {
         set({
           settings: { ...get().settings, temperatureUnit: unit },
+        });
+      },
+
+      setWindSpeedUnit: (unit) => {
+        set({
+          settings: { ...get().settings, windSpeedUnit: unit },
+        });
+      },
+
+      setPressureUnit: (unit) => {
+        set({
+          settings: { ...get().settings, pressureUnit: unit },
+        });
+      },
+
+      setPrecipitationUnit: (unit) => {
+        set({
+          settings: { ...get().settings, precipitationUnit: unit },
         });
       },
 

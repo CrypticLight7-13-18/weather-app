@@ -1,12 +1,12 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { forwardRef, ButtonHTMLAttributes } from 'react';
+import { forwardRef, ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ToggleOption<T extends string> {
   value: T;
-  label: string;
-  icon?: React.ReactNode;
+  label: ReactNode;
+  icon?: ReactNode;
 }
 
 interface ToggleProps<T extends string> {
@@ -38,9 +38,7 @@ export function Toggle<T extends string>({
     <div
       className={cn(
         'inline-flex rounded-xl',
-        // Light mode
         'bg-slate-100 border border-slate-200/50',
-        // Dark mode
         'dark:bg-slate-800 dark:border-slate-700/50',
         sizeStyles[size],
         className
@@ -58,15 +56,11 @@ export function Toggle<T extends string>({
             buttonSizeStyles[size],
             value === option.value
               ? cn(
-                  // Light mode active
                   'bg-white text-slate-900 shadow-sm border border-slate-200/50',
-                  // Dark mode active
                   'dark:bg-slate-700 dark:text-white dark:border-slate-600/50'
                 )
               : cn(
-                  // Light mode inactive
                   'text-slate-500 hover:text-slate-700',
-                  // Dark mode inactive
                   'dark:text-slate-400 dark:hover:text-slate-200'
                 )
           )}

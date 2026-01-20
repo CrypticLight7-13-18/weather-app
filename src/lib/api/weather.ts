@@ -20,20 +20,17 @@ const OPEN_METEO_ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1';
 interface FetchWeatherParams {
   latitude: number;
   longitude: number;
-  temperatureUnit?: 'celsius' | 'fahrenheit';
   timezone?: string;
 }
 
+// Always fetch in metric units (Celsius, km/h, hPa, mm)
+// Conversion to user's preferred units happens in the display layer
 export async function fetchWeatherData({
   latitude,
   longitude,
-  temperatureUnit = 'celsius',
   timezone = 'auto',
 }: FetchWeatherParams): Promise<WeatherData> {
   checkSimulatedError();
-
-  const tempUnit = temperatureUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
-  const windUnit = temperatureUnit === 'fahrenheit' ? 'mph' : 'kmh';
 
   const params = new URLSearchParams({
     latitude: latitude.toString(),
@@ -77,8 +74,8 @@ export async function fetchWeatherData({
       'wind_speed_10m_max',
       'uv_index_max',
     ].join(','),
-    temperature_unit: tempUnit,
-    wind_speed_unit: windUnit,
+    temperature_unit: 'celsius',
+    wind_speed_unit: 'kmh',
     precipitation_unit: 'mm',
     timezone,
     forecast_days: '7',
@@ -96,15 +93,12 @@ export async function fetchWeatherData({
 export async function fetchHistoricalData({
   latitude,
   longitude,
-  temperatureUnit = 'celsius',
   days = 30,
 }: FetchWeatherParams & { days?: number }): Promise<HistoricalData[]> {
   checkSimulatedError();
 
   const endDate = subDays(new Date(), 1);
   const startDate = subDays(endDate, days - 1);
-
-  const tempUnit = temperatureUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
 
   const params = new URLSearchParams({
     latitude: latitude.toString(),
@@ -118,7 +112,8 @@ export async function fetchHistoricalData({
       'temperature_2m_mean',
       'precipitation_sum',
     ].join(','),
-    temperature_unit: tempUnit,
+    temperature_unit: 'celsius',
+    precipitation_unit: 'mm',
     timezone: 'auto',
   });
 
@@ -207,4 +202,3 @@ function transformHistoricalResponse(response: OpenMeteoHistoricalResponse): His
     weatherCode: (daily.weather_code?.[index] ?? 0) as WeatherCode,
   }));
 }
-

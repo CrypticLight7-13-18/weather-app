@@ -1,8 +1,9 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { formatTemperatureValue, convertTemperature, convertPrecipitation } from '@/lib/utils';
 import { HistoricalData } from '@/types/weather';
-import { TemperatureUnit } from '@/types';
+import { Settings } from '@/types';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import { Toggle } from '@/components/ui/toggle';
 import { useState } from 'react';
@@ -49,25 +50,43 @@ const Bar = dynamic(
 
 interface HistoricalChartProps {
   data: HistoricalData[];
-  unit: TemperatureUnit;
+  settings: Settings;
   className?: string;
 }
 
 type ChartType = 'temperature' | 'precipitation';
 
-export function HistoricalChart({ data, unit, className }: HistoricalChartProps) {
+export function HistoricalChart({ data, settings, className }: HistoricalChartProps) {
   const [chartType, setChartType] = useState<ChartType>('temperature');
+
+  const { temperatureUnit, precipitationUnit } = settings;
 
   const chartData = data.map((d) => ({
     date: format(new Date(d.date), 'MMM d'),
     fullDate: d.date,
-    max: Math.round(d.temperatureMax),
-    min: Math.round(d.temperatureMin),
-    mean: Math.round(d.temperatureMean),
-    precipitation: d.precipitationSum,
+    max: formatTemperatureValue(d.temperatureMax, temperatureUnit),
+    min: formatTemperatureValue(d.temperatureMin, temperatureUnit),
+    mean: formatTemperatureValue(d.temperatureMean, temperatureUnit),
+    precipitation: convertPrecipitation(d.precipitationSum, precipitationUnit),
   }));
 
-  const unitSymbol = unit === 'celsius' ? '°C' : '°F';
+  const tempSymbol = temperatureUnit === 'celsius' ? '°C' : '°F';
+  const precipSymbol = precipitationUnit === 'mm' ? 'mm' : 'in';
+
+  // Calculate summary stats with conversions
+  const avgHigh = Math.round(
+    data.reduce((acc, d) => acc + convertTemperature(d.temperatureMax, temperatureUnit), 0) / data.length
+  );
+  const avgLow = Math.round(
+    data.reduce((acc, d) => acc + convertTemperature(d.temperatureMin, temperatureUnit), 0) / data.length
+  );
+  const tempRange = Math.round(
+    Math.max(...data.map((d) => convertTemperature(d.temperatureMax, temperatureUnit))) -
+    Math.min(...data.map((d) => convertTemperature(d.temperatureMin, temperatureUnit)))
+  );
+  const totalPrecip = data.reduce((acc, d) => acc + convertPrecipitation(d.precipitationSum, precipitationUnit), 0);
+  const rainyDays = data.filter((d) => d.precipitationSum > 0).length;
+  const maxDailyPrecip = Math.max(...data.map((d) => convertPrecipitation(d.precipitationSum, precipitationUnit)));
 
   return (
     <Card className={className}>
@@ -86,9 +105,9 @@ export function HistoricalChart({ data, unit, className }: HistoricalChartProps)
 
       <div className="h-64 md:h-80 mt-4">
         {chartType === 'temperature' ? (
-          <TemperatureChart data={chartData} unitSymbol={unitSymbol} />
+          <TemperatureChart data={chartData} tempSymbol={tempSymbol} />
         ) : (
-          <PrecipitationChart data={chartData} />
+          <PrecipitationChart data={chartData} precipSymbol={precipSymbol} />
         )}
       </div>
 
@@ -99,33 +118,15 @@ export function HistoricalChart({ data, unit, className }: HistoricalChartProps)
       )}>
         {chartType === 'temperature' ? (
           <>
-            <StatItem
-              label="Avg High"
-              value={`${Math.round(data.reduce((acc, d) => acc + d.temperatureMax, 0) / data.length)}${unitSymbol}`}
-            />
-            <StatItem
-              label="Avg Low"
-              value={`${Math.round(data.reduce((acc, d) => acc + d.temperatureMin, 0) / data.length)}${unitSymbol}`}
-            />
-            <StatItem
-              label="Range"
-              value={`${Math.round(Math.max(...data.map((d) => d.temperatureMax)) - Math.min(...data.map((d) => d.temperatureMin)))}${unitSymbol}`}
-            />
+            <StatItem label="Avg High" value={`${avgHigh}${tempSymbol}`} />
+            <StatItem label="Avg Low" value={`${avgLow}${tempSymbol}`} />
+            <StatItem label="Range" value={`${tempRange}${tempSymbol}`} />
           </>
         ) : (
           <>
-            <StatItem
-              label="Total Rain"
-              value={`${data.reduce((acc, d) => acc + d.precipitationSum, 0).toFixed(1)} mm`}
-            />
-            <StatItem
-              label="Rainy Days"
-              value={`${data.filter((d) => d.precipitationSum > 0).length} days`}
-            />
-            <StatItem
-              label="Max Daily"
-              value={`${Math.max(...data.map((d) => d.precipitationSum)).toFixed(1)} mm`}
-            />
+            <StatItem label="Total Rain" value={`${totalPrecip.toFixed(precipitationUnit === 'inch' ? 2 : 1)} ${precipSymbol}`} />
+            <StatItem label="Rainy Days" value={`${rainyDays} days`} />
+            <StatItem label="Max Daily" value={`${maxDailyPrecip.toFixed(precipitationUnit === 'inch' ? 2 : 1)} ${precipSymbol}`} />
           </>
         )}
       </div>
@@ -135,10 +136,10 @@ export function HistoricalChart({ data, unit, className }: HistoricalChartProps)
 
 function TemperatureChart({
   data,
-  unitSymbol,
+  tempSymbol,
 }: {
   data: Array<{ date: string; max: number; min: number; mean: number }>;
-  unitSymbol: string;
+  tempSymbol: string;
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -177,7 +178,7 @@ function TemperatureChart({
             padding: '12px',
           }}
           formatter={(value, name) => [
-            `${value}${unitSymbol}`,
+            `${value}${tempSymbol}`,
             name === 'max' ? 'High' : name === 'min' ? 'Low' : 'Average',
           ]}
         />
@@ -204,8 +205,10 @@ function TemperatureChart({
 
 function PrecipitationChart({
   data,
+  precipSymbol,
 }: {
   data: Array<{ date: string; precipitation: number }>;
+  precipSymbol: string;
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -222,7 +225,7 @@ function PrecipitationChart({
           axisLine={false}
           tickLine={false}
           className="fill-slate-500 dark:fill-slate-400 text-xs"
-          tickFormatter={(value) => `${value}mm`}
+          tickFormatter={(value) => `${value}${precipSymbol}`}
           width={50}
         />
         <Tooltip
@@ -233,7 +236,7 @@ function PrecipitationChart({
             boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
             padding: '12px',
           }}
-          formatter={(value) => [`${Number(value).toFixed(1)} mm`, 'Precipitation']}
+          formatter={(value) => [`${Number(value).toFixed(precipSymbol === 'in' ? 2 : 1)} ${precipSymbol}`, 'Precipitation']}
         />
         <Bar
           dataKey="precipitation"

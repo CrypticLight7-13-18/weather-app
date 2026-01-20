@@ -1,23 +1,28 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { formatTemperatureShort, formatDayShort, formatPercentage } from '@/lib/utils';
+import { formatTemperatureShort, formatDayShort, formatPercentage, convertTemperature } from '@/lib/utils';
 import { DailyForecast as DailyForecastType } from '@/types/weather';
+import { TemperatureUnit } from '@/types';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import { WeatherIcon } from './weather-icon';
 import { Droplets } from 'lucide-react';
 
 interface DailyForecastProps {
   daily: DailyForecastType[];
+  temperatureUnit?: TemperatureUnit;
   className?: string;
 }
 
-export function DailyForecast({ daily, className }: DailyForecastProps) {
-  // Get the min and max across all days for the temperature bar
-  const allTemps = daily.flatMap((d) => [d.temperatureMin, d.temperatureMax]);
+export function DailyForecast({ daily, temperatureUnit = 'celsius', className }: DailyForecastProps) {
+  // Get the min and max across all days for the temperature bar (in display units)
+  const allTemps = daily.flatMap((d) => [
+    convertTemperature(d.temperatureMin, temperatureUnit),
+    convertTemperature(d.temperatureMax, temperatureUnit),
+  ]);
   const minTemp = Math.min(...allTemps);
   const maxTemp = Math.max(...allTemps);
-  const tempRange = maxTemp - minTemp;
+  const tempRange = maxTemp - minTemp || 1; // Avoid division by zero
 
   return (
     <Card className={className}>
@@ -33,6 +38,7 @@ export function DailyForecast({ daily, className }: DailyForecastProps) {
             isToday={index === 0}
             minTemp={minTemp}
             tempRange={tempRange}
+            temperatureUnit={temperatureUnit}
           />
         ))}
       </div>
@@ -45,15 +51,21 @@ function DailyItem({
   isToday,
   minTemp,
   tempRange,
+  temperatureUnit,
 }: {
   day: DailyForecastType;
   isToday: boolean;
   minTemp: number;
   tempRange: number;
+  temperatureUnit: TemperatureUnit;
 }) {
+  // Convert temperatures for display
+  const displayMin = convertTemperature(day.temperatureMin, temperatureUnit);
+  const displayMax = convertTemperature(day.temperatureMax, temperatureUnit);
+
   // Calculate position percentages for the temperature bar
-  const lowPercent = ((day.temperatureMin - minTemp) / tempRange) * 100;
-  const highPercent = ((day.temperatureMax - minTemp) / tempRange) * 100;
+  const lowPercent = ((displayMin - minTemp) / tempRange) * 100;
+  const highPercent = ((displayMax - minTemp) / tempRange) * 100;
 
   return (
     <div
@@ -61,18 +73,8 @@ function DailyItem({
         'flex items-center gap-3 py-3 px-2 rounded-xl',
         'transition-all duration-200',
         isToday
-          ? cn(
-              // Light mode - today
-              'bg-blue-50',
-              // Dark mode - today
-              'dark:bg-blue-900/20'
-            )
-          : cn(
-              // Light mode - regular
-              'hover:bg-slate-50',
-              // Dark mode - regular
-              'dark:hover:bg-slate-800/50'
-            )
+          ? 'bg-blue-50 dark:bg-blue-900/20'
+          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
       )}
     >
       {/* Day name */}
@@ -106,17 +108,11 @@ function DailyItem({
 
       {/* Low temp */}
       <span className="w-10 text-right text-sm text-slate-500 dark:text-slate-400">
-        {formatTemperatureShort(day.temperatureMin)}
+        {formatTemperatureShort(day.temperatureMin, temperatureUnit)}
       </span>
 
       {/* Temperature bar */}
-      <div className={cn(
-        'flex-1 h-1.5 rounded-full relative overflow-hidden',
-        // Light mode
-        'bg-slate-200',
-        // Dark mode
-        'dark:bg-slate-700'
-      )}>
+      <div className="flex-1 h-1.5 rounded-full relative overflow-hidden bg-slate-200 dark:bg-slate-700">
         <div
           className="absolute h-full rounded-full bg-linear-to-r from-blue-400 via-yellow-400 to-orange-400"
           style={{
@@ -128,7 +124,7 @@ function DailyItem({
 
       {/* High temp */}
       <span className="w-10 text-sm font-medium text-slate-900 dark:text-white">
-        {formatTemperatureShort(day.temperatureMax)}
+        {formatTemperatureShort(day.temperatureMax, temperatureUnit)}
       </span>
     </div>
   );

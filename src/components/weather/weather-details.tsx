@@ -9,7 +9,7 @@ import {
   getUVIndexLevel,
 } from '@/lib/utils';
 import { CurrentWeather } from '@/types/weather';
-import { TemperatureUnit } from '@/types';
+import { Settings } from '@/types';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import {
   Droplets,
@@ -22,11 +22,11 @@ import {
 
 interface WeatherDetailsProps {
   current: CurrentWeather;
-  unit: TemperatureUnit;
+  settings: Settings;
   className?: string;
 }
 
-export function WeatherDetails({ current, unit, className }: WeatherDetailsProps) {
+export function WeatherDetails({ current, settings, className }: WeatherDetailsProps) {
   const uvInfo = getUVIndexLevel(current.uvIndex);
 
   const details = [
@@ -39,8 +39,8 @@ export function WeatherDetails({ current, unit, className }: WeatherDetailsProps
     {
       icon: Wind,
       label: 'Wind Speed',
-      value: formatWindSpeed(current.windSpeed, unit),
-      subtext: getWindLevel(current.windSpeed, unit),
+      value: formatWindSpeed(current.windSpeed, settings.windSpeedUnit),
+      subtext: getWindLevel(current.windSpeed),
     },
     {
       icon: Compass,
@@ -51,7 +51,7 @@ export function WeatherDetails({ current, unit, className }: WeatherDetailsProps
     {
       icon: Gauge,
       label: 'Pressure',
-      value: formatPressure(current.pressure),
+      value: formatPressure(current.pressure, settings.pressureUnit),
       subtext: getPressureLevel(current.pressure),
     },
     {
@@ -100,9 +100,7 @@ function DetailCard({
   return (
     <div className={cn(
       'flex flex-col gap-2 p-3 rounded-xl',
-      // Light mode
       'bg-slate-50/80 border border-slate-100',
-      // Dark mode
       'dark:bg-slate-800/50 dark:border-slate-700/50'
     )}>
       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
@@ -131,13 +129,12 @@ function getHumidityLevel(humidity: number): string {
   return 'Very humid';
 }
 
-function getWindLevel(speed: number, unit: TemperatureUnit): string {
-  // Convert to km/h for comparison if needed
-  const kmh = unit === 'fahrenheit' ? speed * 1.60934 : speed;
-  if (kmh < 5) return 'Calm';
-  if (kmh < 20) return 'Light breeze';
-  if (kmh < 40) return 'Moderate';
-  if (kmh < 60) return 'Strong';
+// Wind speed is always in km/h internally
+function getWindLevel(speedKmh: number): string {
+  if (speedKmh < 5) return 'Calm';
+  if (speedKmh < 20) return 'Light breeze';
+  if (speedKmh < 40) return 'Moderate';
+  if (speedKmh < 60) return 'Strong';
   return 'Very strong';
 }
 

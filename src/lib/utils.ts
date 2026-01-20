@@ -1,33 +1,115 @@
 import { type ClassValue, clsx } from 'clsx';
+import { TemperatureUnit, WindSpeedUnit, PressureUnit, PrecipitationUnit } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
-export function formatTemperature(temp: number, unit: 'celsius' | 'fahrenheit' = 'celsius'): string {
-  const rounded = Math.round(temp);
+// ============ Temperature Conversions ============
+// Data is always stored in Celsius
+
+export function celsiusToFahrenheit(celsius: number): number {
+  return (celsius * 9) / 5 + 32;
+}
+
+export function convertTemperature(celsius: number, unit: TemperatureUnit): number {
+  if (unit === 'fahrenheit') {
+    return celsiusToFahrenheit(celsius);
+  }
+  return celsius;
+}
+
+export function formatTemperature(temp: number, unit: TemperatureUnit = 'celsius'): string {
+  const converted = convertTemperature(temp, unit);
+  const rounded = Math.round(converted);
   return `${rounded}°${unit === 'celsius' ? 'C' : 'F'}`;
 }
 
-export function formatTemperatureShort(temp: number): string {
-  return `${Math.round(temp)}°`;
+export function formatTemperatureShort(temp: number, unit: TemperatureUnit = 'celsius'): string {
+  const converted = convertTemperature(temp, unit);
+  return `${Math.round(converted)}°`;
 }
 
-export function formatWindSpeed(speed: number, unit: 'celsius' | 'fahrenheit' = 'celsius'): string {
-  const rounded = Math.round(speed);
-  return unit === 'celsius' ? `${rounded} km/h` : `${rounded} mph`;
+export function formatTemperatureValue(temp: number, unit: TemperatureUnit = 'celsius'): number {
+  return Math.round(convertTemperature(temp, unit));
 }
 
-export function formatPrecipitation(mm: number): string {
-  return `${mm.toFixed(1)} mm`;
+// ============ Wind Speed Conversions ============
+// Data is always stored in km/h
+
+export function convertWindSpeed(kmh: number, unit: WindSpeedUnit): number {
+  switch (unit) {
+    case 'mph':
+      return kmh * 0.621371;
+    case 'ms':
+      return kmh / 3.6;
+    case 'knots':
+      return kmh * 0.539957;
+    default:
+      return kmh;
+  }
 }
+
+export function formatWindSpeed(speed: number, unit: WindSpeedUnit = 'kmh'): string {
+  const converted = convertWindSpeed(speed, unit);
+  const rounded = Math.round(converted);
+  const unitLabels: Record<WindSpeedUnit, string> = {
+    kmh: 'km/h',
+    mph: 'mph',
+    ms: 'm/s',
+    knots: 'kn',
+  };
+  return `${rounded} ${unitLabels[unit]}`;
+}
+
+// ============ Pressure Conversions ============
+// Data is always stored in hPa
+
+export function convertPressure(hpa: number, unit: PressureUnit): number {
+  switch (unit) {
+    case 'inhg':
+      return hpa * 0.02953;
+    case 'mmhg':
+      return hpa * 0.750062;
+    default:
+      return hpa;
+  }
+}
+
+export function formatPressure(pressure: number, unit: PressureUnit = 'hpa'): string {
+  const converted = convertPressure(pressure, unit);
+  const unitLabels: Record<PressureUnit, string> = {
+    hpa: 'hPa',
+    inhg: 'inHg',
+    mmhg: 'mmHg',
+  };
+  
+  if (unit === 'inhg') {
+    return `${converted.toFixed(2)} ${unitLabels[unit]}`;
+  }
+  return `${Math.round(converted)} ${unitLabels[unit]}`;
+}
+
+// ============ Precipitation Conversions ============
+// Data is always stored in mm
+
+export function convertPrecipitation(mm: number, unit: PrecipitationUnit): number {
+  if (unit === 'inch') {
+    return mm * 0.0393701;
+  }
+  return mm;
+}
+
+export function formatPrecipitation(mm: number, unit: PrecipitationUnit = 'mm'): string {
+  const converted = convertPrecipitation(mm, unit);
+  const unitLabel = unit === 'mm' ? 'mm' : 'in';
+  return `${converted.toFixed(unit === 'inch' ? 2 : 1)} ${unitLabel}`;
+}
+
+// ============ Other Formatters ============
 
 export function formatPercentage(value: number): string {
   return `${Math.round(value)}%`;
-}
-
-export function formatPressure(hPa: number): string {
-  return `${Math.round(hPa)} hPa`;
 }
 
 export function formatVisibility(meters: number): string {
@@ -114,4 +196,3 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
     timeout = setTimeout(() => func(...args), wait);
   };
 }
-

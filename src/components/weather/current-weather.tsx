@@ -13,7 +13,7 @@ import {
 } from '@/lib/utils';
 import { WeatherData, getWeatherCondition } from '@/types/weather';
 import { Location } from '@/types/location';
-import { TemperatureUnit } from '@/types';
+import { Settings } from '@/types';
 import { Card } from '@/components/ui';
 import { WeatherIconHero } from './weather-icon';
 import {
@@ -33,14 +33,14 @@ import { IconButton } from '@/components/ui/button';
 interface CurrentWeatherProps {
   weather: WeatherData;
   location: Location;
-  unit: TemperatureUnit;
+  settings: Settings;
   className?: string;
 }
 
 export function CurrentWeather({
   weather,
   location,
-  unit,
+  settings,
   className,
 }: CurrentWeatherProps) {
   const { current, daily } = weather;
@@ -108,13 +108,13 @@ export function CurrentWeather({
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className={cn('text-7xl md:text-8xl font-light tracking-tight', condition.textColor)}>
-              {formatTemperatureShort(current.temperature)}
+              {formatTemperatureShort(current.temperature, settings.temperatureUnit)}
             </div>
             <p className={cn('text-lg mt-2', condition.textColor)}>
               {condition.label}
             </p>
             <p className={cn('text-sm opacity-70', condition.textColor)}>
-              Feels like {formatTemperature(current.feelsLike, unit)}
+              Feels like {formatTemperature(current.feelsLike, settings.temperatureUnit)}
             </p>
           </div>
           <WeatherIconHero
@@ -129,10 +129,10 @@ export function CurrentWeather({
           <div className={cn('flex gap-4 mb-6 text-sm', condition.textColor)}>
             <span className="flex items-center gap-1">
               <Thermometer className="h-4 w-4" />
-              H: {formatTemperatureShort(todayForecast.temperatureMax)}
+              H: {formatTemperatureShort(todayForecast.temperatureMax, settings.temperatureUnit)}
             </span>
             <span className="opacity-70">
-              L: {formatTemperatureShort(todayForecast.temperatureMin)}
+              L: {formatTemperatureShort(todayForecast.temperatureMin, settings.temperatureUnit)}
             </span>
           </div>
         )}
@@ -148,7 +148,7 @@ export function CurrentWeather({
           <QuickStat
             icon={<Wind className="h-4 w-4" />}
             label="Wind"
-            value={`${formatWindSpeed(current.windSpeed, unit)} ${getWindDirection(current.windDirection)}`}
+            value={`${formatWindSpeed(current.windSpeed, settings.windSpeedUnit)} ${getWindDirection(current.windDirection)}`}
             textColor={condition.textColor}
           />
           <QuickStat
@@ -160,7 +160,7 @@ export function CurrentWeather({
           <QuickStat
             icon={<Gauge className="h-4 w-4" />}
             label="Pressure"
-            value={formatPressure(current.pressure)}
+            value={formatPressure(current.pressure, settings.pressureUnit)}
             textColor={condition.textColor}
           />
         </div>
@@ -204,4 +204,3 @@ function QuickStat({
     </div>
   );
 }
-
