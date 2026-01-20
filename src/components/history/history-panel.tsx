@@ -3,10 +3,11 @@
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores';
 import { Location } from '@/types/location';
+import { TemperatureUnit } from '@/types';
 import { Card, EmptyState, Button } from '@/components/ui';
 import { WeatherIcon } from '@/components/weather';
 import { formatTemperatureShort } from '@/lib/utils';
-import { History, Trash2, X, Clock } from 'lucide-react';
+import { History, X, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface HistoryPanelProps {
@@ -15,7 +16,7 @@ interface HistoryPanelProps {
 }
 
 export function HistoryPanel({ onSelect, className }: HistoryPanelProps) {
-  const { browsingHistory, removeFromHistory, clearHistory } = useAppStore();
+  const { browsingHistory, removeFromHistory, clearHistory, settings } = useAppStore();
 
   if (browsingHistory.length === 0) {
     return (
@@ -58,6 +59,7 @@ export function HistoryPanel({ onSelect, className }: HistoryPanelProps) {
             entry={entry}
             onSelect={() => onSelect(entry.location)}
             onRemove={() => removeFromHistory(entry.location.id)}
+            temperatureUnit={settings.temperatureUnit}
           />
         ))}
       </div>
@@ -77,9 +79,10 @@ interface HistoryItemProps {
   };
   onSelect: () => void;
   onRemove: () => void;
+  temperatureUnit: TemperatureUnit;
 }
 
-function HistoryItem({ entry, onSelect, onRemove }: HistoryItemProps) {
+function HistoryItem({ entry, onSelect, onRemove, temperatureUnit }: HistoryItemProps) {
   const { location, timestamp, weatherSummary } = entry;
   const timeAgo = formatDistanceToNow(timestamp, { addSuffix: true });
 
@@ -117,7 +120,7 @@ function HistoryItem({ entry, onSelect, onRemove }: HistoryItemProps) {
         </div>
         {weatherSummary && (
           <span className="text-lg font-semibold text-slate-900 dark:text-white">
-            {formatTemperatureShort(weatherSummary.temperature)}
+            {formatTemperatureShort(weatherSummary.temperature, temperatureUnit)}
           </span>
         )}
       </button>
@@ -144,7 +147,7 @@ function HistoryItem({ entry, onSelect, onRemove }: HistoryItemProps) {
 
 // Compact history for the main page sidebar
 export function HistoryPanelCompact({ onSelect, className }: HistoryPanelProps) {
-  const { browsingHistory } = useAppStore();
+  const { browsingHistory, settings } = useAppStore();
 
   // Only show if we have history
   if (browsingHistory.length === 0) {
@@ -188,7 +191,7 @@ export function HistoryPanelCompact({ onSelect, className }: HistoryPanelProps) 
             </span>
             {entry.weatherSummary && (
               <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                {formatTemperatureShort(entry.weatherSummary.temperature)}
+                {formatTemperatureShort(entry.weatherSummary.temperature, settings.temperatureUnit)}
               </span>
             )}
           </button>
@@ -197,4 +200,3 @@ export function HistoryPanelCompact({ onSelect, className }: HistoryPanelProps) 
     </Card>
   );
 }
-

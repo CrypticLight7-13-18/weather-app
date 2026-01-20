@@ -1,50 +1,53 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAppStore, useWeatherStore } from '@/stores';
 import { fetchWeatherData } from '@/lib/api';
 import { Location } from '@/types/location';
 import { WeatherData } from '@/types/weather';
 
 export function useFavorites() {
-  const {
-    favorites,
-    addFavorite,
-    removeFavorite,
-    reorderFavorites,
-    isFavorite,
-    settings,
-  } = useAppStore();
+  const favorites = useAppStore((state) => state.favorites);
+  const addFavoriteStore = useAppStore((state) => state.addFavorite);
+  const removeFavoriteStore = useAppStore((state) => state.removeFavorite);
+  const reorderFavorites = useAppStore((state) => state.reorderFavorites);
 
   const { cacheWeather, getCachedWeather } = useWeatherStore();
 
+  // Create a reactive isFavorite check using the favorites array
+  const isFavorite = useCallback(
+    (locationId: string): boolean => {
+      return favorites.some((f) => f.id === locationId);
+    },
+    [favorites]
+  );
+
   // Optimistic add with prefetch
-  const addFavoriteOptimistic = useCallback(
+  const addFavorite = useCallback(
     async (location: Location) => {
       // Optimistically add to favorites
-      addFavorite(location);
+      addFavoriteStore(location);
 
       // Prefetch weather data in background
       try {
         const data = await fetchWeatherData({
           latitude: location.latitude,
           longitude: location.longitude,
-          temperatureUnit: settings.temperatureUnit,
         });
         cacheWeather(location.id, data, location);
       } catch {
         // Silently fail prefetch - will retry when user views
       }
     },
-    [addFavorite, cacheWeather, settings.temperatureUnit]
+    [addFavoriteStore, cacheWeather]
   );
 
   // Optimistic remove
-  const removeFavoriteOptimistic = useCallback(
+  const removeFavorite = useCallback(
     (locationId: string) => {
-      removeFavorite(locationId);
+      removeFavoriteStore(locationId);
     },
-    [removeFavorite]
+    [removeFavoriteStore]
   );
 
   // Get cached weather for a favorite
@@ -67,7 +70,6 @@ export function useFavorites() {
           const data = await fetchWeatherData({
             latitude: favorite.latitude,
             longitude: favorite.longitude,
-            temperatureUnit: settings.temperatureUnit,
           });
           cacheWeather(favorite.id, data, favorite);
         } catch {
@@ -86,11 +88,10 @@ export function useFavorites() {
 
   return {
     favorites,
-    addFavorite: addFavoriteOptimistic,
-    removeFavorite: removeFavoriteOptimistic,
+    addFavorite,
+    removeFavorite,
     reorderFavorites,
     isFavorite,
     getFavoriteWeather,
   };
 }
-

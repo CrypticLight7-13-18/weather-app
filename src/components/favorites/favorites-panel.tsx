@@ -112,7 +112,7 @@ export function FavoritesPanel({ onSelect, className }: FavoritesPanelProps) {
                 </div>
                 {weather && (
                   <span className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {formatTemperatureShort(weather.current.temperature)}
+                    {formatTemperatureShort(weather.current.temperature, settings.temperatureUnit)}
                   </span>
                 )}
               </button>

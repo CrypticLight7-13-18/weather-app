@@ -25,10 +25,10 @@ import {
   Sunrise,
   Sunset,
   Star,
-  StarOff,
 } from 'lucide-react';
 import { useFavorites } from '@/hooks';
 import { IconButton } from '@/components/ui/button';
+import { useMemo, useCallback } from 'react';
 
 interface CurrentWeatherProps {
   weather: WeatherData;
@@ -45,18 +45,23 @@ export function CurrentWeather({
 }: CurrentWeatherProps) {
   const { current, daily } = weather;
   const condition = getWeatherCondition(current.weatherCode, current.isDay);
-  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
-  const isLocationFavorite = isFavorite(location.id);
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
+  
+  // Compute isFavorite reactively based on favorites array
+  const isLocationFavorite = useMemo(
+    () => favorites.some((f) => f.id === location.id),
+    [favorites, location.id]
+  );
 
   const todayForecast = daily[0];
 
-  const toggleFavorite = () => {
+  const toggleFavorite = useCallback(() => {
     if (isLocationFavorite) {
       removeFavorite(location.id);
     } else {
       addFavorite(location);
     }
-  };
+  }, [isLocationFavorite, location, addFavorite, removeFavorite]);
 
   return (
     <Card
@@ -95,11 +100,12 @@ export function CurrentWeather({
                 condition.textColor
               )}
             >
-              {isLocationFavorite ? (
-                <Star className="h-5 w-5 fill-current" />
-              ) : (
-                <StarOff className="h-5 w-5" />
-              )}
+              <Star 
+                className={cn(
+                  'h-5 w-5 transition-all duration-200',
+                  isLocationFavorite && 'fill-current text-yellow-400'
+                )} 
+              />
             </IconButton>
           </div>
         </div>
