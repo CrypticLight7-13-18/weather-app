@@ -620,12 +620,12 @@ function TogglesSection() {
       <Card variant="default" padding="lg">
         <CardHeader><CardTitle>Switch Toggle</CardTitle></CardHeader>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          Binary on/off toggle for boolean settings like notifications, developer mode, etc.
+          Binary on/off toggle for boolean settings like notifications, auto-refresh, etc.
         </p>
         <div className="flex items-center gap-4">
           <Switch checked={checked} onChange={setChecked} />
           <span className="text-sm text-slate-600 dark:text-slate-400">
-            Developer Mode: <strong>{checked ? 'ON' : 'OFF'}</strong>
+            Auto-refresh: <strong>{checked ? 'ON' : 'OFF'}</strong>
           </span>
         </div>
       </Card>

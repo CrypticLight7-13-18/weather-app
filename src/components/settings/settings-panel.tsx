@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores';
 import { useTheme } from '@/hooks';
 import { Card, CardHeader, CardTitle, Toggle } from '@/components/ui';
@@ -18,8 +17,6 @@ export function SettingsPanel({ className }: SettingsPanelProps) {
     setWindSpeedUnit,
     setPressureUnit,
     setPrecipitationUnit,
-    devMode,
-    toggleDevMode,
   } = useAppStore();
   const { theme, setTheme } = useTheme();
 
@@ -126,34 +123,6 @@ export function SettingsPanel({ className }: SettingsPanelProps) {
             size="sm"
           />
         </SettingRow>
-
-        {/* Dev mode toggle */}
-        <div className={cn(
-          'pt-4 border-t',
-          'border-slate-200 dark:border-slate-700'
-        )}>
-          <button
-            onClick={toggleDevMode}
-            className={cn(
-              'w-full flex items-center justify-between p-3 rounded-xl',
-              'text-sm font-medium',
-              'transition-colors duration-200',
-              devMode
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
-            )}
-          >
-            <span>Developer Mode</span>
-            <span className={cn(
-              'px-2 py-0.5 rounded text-xs font-bold',
-              devMode 
-                ? 'bg-amber-500 text-white' 
-                : 'bg-slate-300 text-slate-600 dark:bg-slate-600 dark:text-slate-300'
-            )}>
-              {devMode ? 'ON' : 'OFF'}
-            </span>
-          </button>
-        </div>
       </div>
     </Card>
   );

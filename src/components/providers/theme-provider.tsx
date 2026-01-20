@@ -1,19 +1,24 @@
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, ReactNode, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/stores';
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [mounted, setMounted] = useState(false);
-  const { settings } = useAppStore();
+// Hook to safely detect client-side mounting without setState in effect
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const mounted = useIsMounted();
+  const { settings } = useAppStore();
 
   useEffect(() => {
     if (!mounted) return;

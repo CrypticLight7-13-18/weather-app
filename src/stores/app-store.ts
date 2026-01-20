@@ -46,10 +46,6 @@ interface AppState {
   selectedLocation: Location | null;
   setSelectedLocation: (location: Location | null) => void;
 
-  // Dev mode
-  devMode: boolean;
-  toggleDevMode: () => void;
-
   // Reset all data
   resetAllData: () => void;
 
@@ -182,10 +178,6 @@ export const useAppStore = create<AppState>()(
       selectedLocation: null,
       setSelectedLocation: (location) => set({ selectedLocation: location }),
 
-      // Dev mode
-      devMode: false,
-      toggleDevMode: () => set({ devMode: !get().devMode }),
-
       // Reset all data
       resetAllData: () => {
         // Clear localStorage
@@ -199,7 +191,6 @@ export const useAppStore = create<AppState>()(
           browsingHistory: [],
           settings: DEFAULT_SETTINGS,
           selectedLocation: null,
-          devMode: false,
           isFirstTimeUser: true,
         });
 
@@ -221,7 +212,6 @@ export const useAppStore = create<AppState>()(
         recentSearches: state.recentSearches,
         browsingHistory: state.browsingHistory,
         settings: state.settings,
-        devMode: state.devMode,
         isFirstTimeUser: state.isFirstTimeUser,
       }),
     }

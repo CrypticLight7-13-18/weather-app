@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { IconButton } from '@/components/ui/button';
 import { useTheme } from '@/hooks';
 import { useAppStore } from '@/stores';
-import { Search, Sun, Moon, Monitor, RefreshCw, MapPin, Settings, X } from 'lucide-react';
+import { Search, Sun, Moon, RefreshCw, MapPin, Settings, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/ui/toggle';
@@ -38,8 +38,6 @@ export function Header({
     setWindSpeedUnit,
     setPressureUnit,
     setPrecipitationUnit,
-    devMode,
-    toggleDevMode,
   } = useAppStore();
 
   // Close settings when clicking outside
@@ -312,30 +310,6 @@ export function Header({
                         size="sm"
                       />
                     </SettingRow>
-
-                    {/* Developer mode */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                      <button
-                        onClick={toggleDevMode}
-                        className={cn(
-                          'w-full flex items-center justify-between p-2 rounded-lg',
-                          'text-xs font-medium transition-colors',
-                          devMode
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'
-                        )}
-                      >
-                        <span>Developer Mode</span>
-                        <span className={cn(
-                          'px-1.5 py-0.5 rounded text-[10px] font-bold',
-                          devMode
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-300'
-                        )}>
-                          {devMode ? 'ON' : 'OFF'}
-                        </span>
-                      </button>
-                    </div>
                   </div>
                 </motion.div>
               )}

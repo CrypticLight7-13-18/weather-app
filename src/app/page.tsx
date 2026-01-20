@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout';
 import { SearchDialog } from '@/components/search';
 import { FavoritesPanel } from '@/components/favorites';
-import { ErrorSimulationPanel } from '@/components/dev';
 import { HistoryPanelCompact } from '@/components/history';
 import {
   CurrentWeather,
@@ -40,7 +39,7 @@ export default function HomePage() {
   const { data: historicalData, status: historicalStatus } = useHistoricalWeather();
   const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
   const { favorites } = useFavorites();
-  const { settings, devMode, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
+  const { settings, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
 
   // Auto-detect location on first load
@@ -231,9 +230,6 @@ export default function HomePage() {
 
               {/* Recently Viewed History */}
               <HistoryPanelCompact onSelect={handleSelectLocation} />
-
-              {/* Dev panel (only shown in dev mode) */}
-              {devMode && <ErrorSimulationPanel />}
             </div>
           </div>
         )}
