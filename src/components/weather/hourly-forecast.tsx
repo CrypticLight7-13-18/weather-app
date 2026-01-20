@@ -5,7 +5,7 @@ import { formatTemperatureShort, formatHour, formatPercentage } from '@/lib/util
 import { HourlyForecast as HourlyForecastType } from '@/types/weather';
 import { Card, CardHeader, CardTitle } from '@/components/ui';
 import { WeatherIcon } from './weather-icon';
-import { Droplets } from 'lucide-react';
+import { Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 
 interface HourlyForecastProps {
@@ -18,7 +18,6 @@ export function HourlyForecast({ hourly, className }: HourlyForecastProps) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // Show next 24 hours
   const next24Hours = hourly.slice(0, 24);
 
   const updateScrollState = () => {
@@ -52,39 +51,34 @@ export function HourlyForecast({ hourly, className }: HourlyForecastProps) {
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
             className={cn(
-              'p-1 rounded-lg transition-colors',
+              'p-1.5 rounded-lg transition-colors',
               canScrollLeft
                 ? 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
                 : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             )}
             aria-label="Scroll left"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
             className={cn(
-              'p-1 rounded-lg transition-colors',
+              'p-1.5 rounded-lg transition-colors',
               canScrollRight
                 ? 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
                 : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             )}
             aria-label="Scroll right"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="h-5 w-5" />
           </button>
         </div>
       </CardHeader>
 
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {next24Hours.map((hour, index) => (
           <HourlyItem key={hour.time} hour={hour} isNow={index === 0} />
@@ -107,7 +101,7 @@ function HourlyItem({
         'flex flex-col items-center gap-2 p-3 rounded-xl min-w-[70px]',
         'transition-all duration-200',
         isNow
-          ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-200 dark:ring-blue-700'
+          ? 'bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:ring-blue-700'
           : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
       )}
     >
@@ -119,15 +113,15 @@ function HourlyItem({
       >
         {isNow ? 'Now' : formatHour(hour.time)}
       </span>
-      
+
       <WeatherIcon code={hour.weatherCode} isDay={hour.isDay} size="md" />
-      
+
       <span className="text-base font-semibold text-slate-900 dark:text-white">
         {formatTemperatureShort(hour.temperature)}
       </span>
 
       {hour.precipitationProbability > 0 && (
-        <div className="flex items-center gap-1 text-blue-500">
+        <div className="flex items-center gap-1 text-blue-500 dark:text-blue-400">
           <Droplets className="h-3 w-3" />
           <span className="text-xs">{formatPercentage(hour.precipitationProbability)}</span>
         </div>
@@ -135,4 +129,3 @@ function HourlyItem({
     </div>
   );
 }
-

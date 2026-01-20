@@ -24,29 +24,40 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variantStyles = {
       primary: cn(
-        'bg-gradient-to-r from-sky-500 to-blue-600 text-white',
+        // Light mode
+        'bg-linear-to-r from-sky-500 to-blue-600 text-white',
         'hover:from-sky-600 hover:to-blue-700',
-        'shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40',
+        'shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30',
+        // Dark mode inherits the same gradient
         'active:scale-[0.98]'
       ),
       secondary: cn(
-        'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
-        'hover:bg-slate-200 dark:hover:bg-slate-700',
-        'border border-slate-200 dark:border-slate-700'
+        // Light mode
+        'bg-white text-slate-700 border border-slate-200',
+        'hover:bg-slate-50 hover:border-slate-300',
+        'shadow-sm',
+        // Dark mode
+        'dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+        'dark:hover:bg-slate-700 dark:hover:border-slate-600'
       ),
       ghost: cn(
-        'text-slate-600 dark:text-slate-300',
-        'hover:bg-slate-100 dark:hover:bg-slate-800'
+        // Light mode
+        'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+        // Dark mode
+        'dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
       ),
       danger: cn(
         'bg-red-500 text-white',
         'hover:bg-red-600',
-        'shadow-lg shadow-red-500/25'
+        'shadow-md shadow-red-500/20'
       ),
       icon: cn(
-        'text-slate-500 dark:text-slate-400',
-        'hover:bg-slate-100 dark:hover:bg-slate-800',
-        'hover:text-slate-700 dark:hover:text-slate-200'
+        // Light mode
+        'text-slate-500 hover:text-slate-700',
+        'hover:bg-slate-100',
+        // Dark mode
+        'dark:text-slate-400 dark:hover:text-slate-200',
+        'dark:hover:bg-slate-800'
       ),
     };
 
@@ -63,6 +74,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'inline-flex items-center justify-center font-medium rounded-xl',
           'transition-all duration-200',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+          'dark:focus-visible:ring-offset-slate-900',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],
@@ -123,4 +135,3 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 );
 
 IconButton.displayName = 'IconButton';
-

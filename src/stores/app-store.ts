@@ -5,6 +5,16 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Location } from '@/types/location';
 import { Settings, TemperatureUnit, Theme } from '@/types';
 
+interface HistoryEntry {
+  location: Location;
+  timestamp: number;
+  weatherSummary?: {
+    temperature: number;
+    weatherCode: number;
+    isDay: boolean;
+  };
+}
+
 interface AppState {
   // Favorites
   favorites: Location[];
@@ -18,6 +28,12 @@ interface AppState {
   addRecentSearch: (location: Location) => void;
   clearRecentSearches: () => void;
 
+  // Browsing history
+  browsingHistory: HistoryEntry[];
+  addToHistory: (location: Location, weatherSummary?: HistoryEntry['weatherSummary']) => void;
+  removeFromHistory: (locationId: string) => void;
+  clearHistory: () => void;
+
   // Settings
   settings: Settings;
   setTemperatureUnit: (unit: TemperatureUnit) => void;
@@ -30,6 +46,13 @@ interface AppState {
   // Dev mode
   devMode: boolean;
   toggleDevMode: () => void;
+
+  // Reset all data
+  resetAllData: () => void;
+
+  // First time user flag
+  isFirstTimeUser: boolean;
+  setFirstTimeUser: (value: boolean) => void;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -39,6 +62,7 @@ const DEFAULT_SETTINGS: Settings = {
 
 const MAX_RECENT_SEARCHES = 5;
 const MAX_FAVORITES = 10;
+const MAX_HISTORY = 20;
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -89,6 +113,32 @@ export const useAppStore = create<AppState>()(
 
       clearRecentSearches: () => set({ recentSearches: [] }),
 
+      // Browsing history
+      browsingHistory: [],
+
+      addToHistory: (location, weatherSummary) => {
+        const { browsingHistory } = get();
+        // Remove if already exists (to move to top)
+        const filtered = browsingHistory.filter((h) => h.location.id !== location.id);
+        // Create new entry
+        const newEntry: HistoryEntry = {
+          location,
+          timestamp: Date.now(),
+          weatherSummary,
+        };
+        // Add to beginning and limit
+        const updated = [newEntry, ...filtered].slice(0, MAX_HISTORY);
+        set({ browsingHistory: updated });
+      },
+
+      removeFromHistory: (locationId) => {
+        set({
+          browsingHistory: get().browsingHistory.filter((h) => h.location.id !== locationId),
+        });
+      },
+
+      clearHistory: () => set({ browsingHistory: [] }),
+
       // Settings
       settings: DEFAULT_SETTINGS,
       
@@ -111,6 +161,33 @@ export const useAppStore = create<AppState>()(
       // Dev mode
       devMode: false,
       toggleDevMode: () => set({ devMode: !get().devMode }),
+
+      // Reset all data
+      resetAllData: () => {
+        // Clear localStorage
+        localStorage.removeItem('weather-app-storage');
+        localStorage.removeItem('weather-last-location');
+        
+        // Reset all state to defaults
+        set({
+          favorites: [],
+          recentSearches: [],
+          browsingHistory: [],
+          settings: DEFAULT_SETTINGS,
+          selectedLocation: null,
+          devMode: false,
+          isFirstTimeUser: true,
+        });
+
+        // Reload the page to fully reset
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      },
+
+      // First time user
+      isFirstTimeUser: true,
+      setFirstTimeUser: (value) => set({ isFirstTimeUser: value }),
     }),
     {
       name: 'weather-app-storage',
@@ -118,10 +195,11 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         favorites: state.favorites,
         recentSearches: state.recentSearches,
+        browsingHistory: state.browsingHistory,
         settings: state.settings,
         devMode: state.devMode,
+        isFirstTimeUser: state.isFirstTimeUser,
       }),
     }
   )
 );
-

@@ -61,15 +61,27 @@ function DailyItem({
         'flex items-center gap-3 py-3 px-2 rounded-xl',
         'transition-all duration-200',
         isToday
-          ? 'bg-blue-50 dark:bg-blue-900/20'
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+          ? cn(
+              // Light mode - today
+              'bg-blue-50',
+              // Dark mode - today
+              'dark:bg-blue-900/20'
+            )
+          : cn(
+              // Light mode - regular
+              'hover:bg-slate-50',
+              // Dark mode - regular
+              'dark:hover:bg-slate-800/50'
+            )
       )}
     >
       {/* Day name */}
       <span
         className={cn(
           'w-12 text-sm font-medium',
-          isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
+          isToday 
+            ? 'text-blue-600 dark:text-blue-400' 
+            : 'text-slate-700 dark:text-slate-300'
         )}
       >
         {formatDayShort(day.date)}
@@ -83,12 +95,12 @@ function DailyItem({
       {/* Precipitation chance */}
       <div className="w-12 flex items-center justify-center">
         {day.precipitationProbability > 0 ? (
-          <div className="flex items-center gap-0.5 text-blue-500">
+          <div className="flex items-center gap-0.5 text-blue-500 dark:text-blue-400">
             <Droplets className="h-3 w-3" />
             <span className="text-xs">{formatPercentage(day.precipitationProbability)}</span>
           </div>
         ) : (
-          <span className="text-xs text-slate-400">—</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
         )}
       </div>
 
@@ -98,9 +110,15 @@ function DailyItem({
       </span>
 
       {/* Temperature bar */}
-      <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full relative overflow-hidden">
+      <div className={cn(
+        'flex-1 h-1.5 rounded-full relative overflow-hidden',
+        // Light mode
+        'bg-slate-200',
+        // Dark mode
+        'dark:bg-slate-700'
+      )}>
         <div
-          className="absolute h-full rounded-full bg-gradient-to-r from-blue-400 via-yellow-400 to-orange-400"
+          className="absolute h-full rounded-full bg-linear-to-r from-blue-400 via-yellow-400 to-orange-400"
           style={{
             left: `${lowPercent}%`,
             right: `${100 - highPercent}%`,
@@ -115,4 +133,3 @@ function DailyItem({
     </div>
   );
 }
-

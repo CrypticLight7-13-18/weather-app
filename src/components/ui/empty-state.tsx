@@ -66,7 +66,13 @@ export function EmptyState({
         className
       )}
     >
-      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+      <div className={cn(
+        'w-16 h-16 rounded-full flex items-center justify-center mb-4',
+        // Light mode
+        'bg-slate-100',
+        // Dark mode
+        'dark:bg-slate-800'
+      )}>
         <Icon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
       </div>
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
@@ -83,4 +89,3 @@ export function EmptyState({
     </div>
   );
 }
-

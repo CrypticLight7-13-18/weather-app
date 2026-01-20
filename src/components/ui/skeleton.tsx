@@ -5,13 +5,11 @@ import { cn } from '@/lib/utils';
 interface SkeletonProps {
   className?: string;
   variant?: 'default' | 'circular' | 'rounded';
-  animation?: 'pulse' | 'shimmer' | 'none';
 }
 
 export function Skeleton({
   className,
   variant = 'default',
-  animation = 'shimmer',
 }: SkeletonProps) {
   const variantStyles = {
     default: 'rounded-md',
@@ -19,18 +17,12 @@ export function Skeleton({
     rounded: 'rounded-2xl',
   };
 
-  const animationStyles = {
-    pulse: 'animate-pulse',
-    shimmer: 'skeleton-shimmer',
-    none: '',
-  };
-
   return (
     <div
       className={cn(
+        'animate-pulse',
         'bg-slate-200 dark:bg-slate-700',
         variantStyles[variant],
-        animationStyles[animation],
         className
       )}
       aria-hidden="true"
@@ -38,7 +30,6 @@ export function Skeleton({
   );
 }
 
-// Pre-built skeleton layouts for common patterns
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
   return (
     <div className={cn('space-y-2', className)}>
@@ -56,7 +47,9 @@ export function SkeletonCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4',
+        'rounded-2xl p-4',
+        'bg-white border border-slate-200/80 shadow-sm',
+        'dark:bg-slate-800 dark:border-slate-700',
         className
       )}
     >
@@ -74,7 +67,10 @@ export function SkeletonWeatherCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-6',
+        'rounded-2xl p-6',
+        'bg-linear-to-br from-slate-100 via-slate-50 to-blue-50',
+        'dark:from-slate-800 dark:via-slate-800 dark:to-slate-900',
+        'border border-slate-200/50 dark:border-slate-700/50',
         className
       )}
     >
@@ -136,4 +132,3 @@ export function SkeletonChart({ className }: { className?: string }) {
     </div>
   );
 }
-

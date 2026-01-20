@@ -93,7 +93,10 @@ export function HistoricalChart({ data, unit, className }: HistoricalChartProps)
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+      <div className={cn(
+        'grid grid-cols-3 gap-4 mt-6 pt-4 border-t',
+        'border-slate-200 dark:border-slate-700'
+      )}>
         {chartType === 'temperature' ? (
           <>
             <StatItem
@@ -150,29 +153,30 @@ function TemperatureChart({
             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" vertical={false} />
         <XAxis
           dataKey="date"
           axisLine={false}
           tickLine={false}
-          tick={{ fill: '#94a3b8', fontSize: 12 }}
+          className="fill-slate-500 dark:fill-slate-400 text-xs"
           interval="preserveStartEnd"
         />
         <YAxis
           axisLine={false}
           tickLine={false}
-          tick={{ fill: '#94a3b8', fontSize: 12 }}
+          className="fill-slate-500 dark:fill-slate-400 text-xs"
           tickFormatter={(value) => `${value}°`}
           width={40}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
             borderRadius: '12px',
-            border: 'none',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+            padding: '12px',
           }}
-          formatter={(value: number, name: string) => [
+          formatter={(value, name) => [
             `${value}${unitSymbol}`,
             name === 'max' ? 'High' : name === 'min' ? 'Low' : 'Average',
           ]}
@@ -206,29 +210,30 @@ function PrecipitationChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" vertical={false} />
         <XAxis
           dataKey="date"
           axisLine={false}
           tickLine={false}
-          tick={{ fill: '#94a3b8', fontSize: 12 }}
+          className="fill-slate-500 dark:fill-slate-400 text-xs"
           interval="preserveStartEnd"
         />
         <YAxis
           axisLine={false}
           tickLine={false}
-          tick={{ fill: '#94a3b8', fontSize: 12 }}
+          className="fill-slate-500 dark:fill-slate-400 text-xs"
           tickFormatter={(value) => `${value}mm`}
           width={50}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
             borderRadius: '12px',
-            border: 'none',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+            padding: '12px',
           }}
-          formatter={(value: number) => [`${value.toFixed(1)} mm`, 'Precipitation']}
+          formatter={(value) => [`${Number(value).toFixed(1)} mm`, 'Precipitation']}
         />
         <Bar
           dataKey="precipitation"
@@ -249,4 +254,3 @@ function StatItem({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

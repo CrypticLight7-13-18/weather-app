@@ -16,7 +16,6 @@ import {
   Wind,
   Gauge,
   Sun,
-  Eye,
   Cloud,
   Compass,
 } from 'lucide-react';
@@ -76,7 +75,7 @@ export function WeatherDetails({ current, unit, className }: WeatherDetailsProps
         <CardTitle>Weather Details</CardTitle>
       </CardHeader>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {details.map((detail) => (
           <DetailCard key={detail.label} {...detail} />
         ))}
@@ -99,16 +98,27 @@ function DetailCard({
   valueColor?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+    <div className={cn(
+      'flex flex-col gap-2 p-3 rounded-xl',
+      // Light mode
+      'bg-slate-50/80 border border-slate-100',
+      // Dark mode
+      'dark:bg-slate-800/50 dark:border-slate-700/50'
+    )}>
       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
         <Icon className="h-4 w-4" />
-        <span className="text-xs">{label}</span>
+        <span className="text-xs font-medium">{label}</span>
       </div>
       <div>
-        <span className={cn('text-xl font-semibold', valueColor || 'text-slate-900 dark:text-white')}>
+        <span className={cn(
+          'text-xl font-semibold',
+          valueColor || 'text-slate-900 dark:text-white'
+        )}>
           {value}
         </span>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtext}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          {subtext}
+        </p>
       </div>
     </div>
   );
@@ -143,4 +153,3 @@ function getCloudLevel(cloudCover: number): string {
   if (cloudCover < 80) return 'Mostly cloudy';
   return 'Overcast';
 }
-

@@ -22,7 +22,6 @@ import {
   Thermometer,
   Eye,
   Gauge,
-  Sun,
   Sunrise,
   Sunset,
   Star,
@@ -65,7 +64,7 @@ export function CurrentWeather({
       padding="lg"
       className={cn(
         'relative overflow-hidden',
-        'bg-gradient-to-br',
+        'bg-linear-to-br',
         condition.gradient,
         className
       )}

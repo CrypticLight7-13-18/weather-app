@@ -37,7 +37,11 @@ export function Toggle<T extends string>({
   return (
     <div
       className={cn(
-        'inline-flex rounded-xl bg-slate-100 dark:bg-slate-800',
+        'inline-flex rounded-xl',
+        // Light mode
+        'bg-slate-100 border border-slate-200/50',
+        // Dark mode
+        'dark:bg-slate-800 dark:border-slate-700/50',
         sizeStyles[size],
         className
       )}
@@ -53,8 +57,18 @@ export function Toggle<T extends string>({
             'transition-all duration-200',
             buttonSizeStyles[size],
             value === option.value
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              ? cn(
+                  // Light mode active
+                  'bg-white text-slate-900 shadow-sm border border-slate-200/50',
+                  // Dark mode active
+                  'dark:bg-slate-700 dark:text-white dark:border-slate-600/50'
+                )
+              : cn(
+                  // Light mode inactive
+                  'text-slate-500 hover:text-slate-700',
+                  // Dark mode inactive
+                  'dark:text-slate-400 dark:hover:text-slate-200'
+                )
           )}
           aria-pressed={value === option.value}
         >
@@ -87,7 +101,10 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
           'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full',
           'transition-colors duration-200 ease-in-out',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-          checked ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700',
+          'dark:focus-visible:ring-offset-slate-900',
+          checked 
+            ? 'bg-blue-500' 
+            : 'bg-slate-200 dark:bg-slate-700',
           className
         )}
         {...props}
@@ -95,7 +112,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
         <span
           className={cn(
             'pointer-events-none inline-block h-5 w-5 transform rounded-full',
-            'bg-white shadow-lg ring-0',
+            'bg-white shadow-md ring-0',
             'transition duration-200 ease-in-out',
             checked ? 'translate-x-5' : 'translate-x-0.5',
             'mt-0.5'
@@ -107,4 +124,3 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
 );
 
 Switch.displayName = 'Switch';
-

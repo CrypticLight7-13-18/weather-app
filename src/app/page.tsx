@@ -5,6 +5,7 @@ import { useWeather, useHistoricalWeather, useGeolocation, useFavorites } from '
 import { useAppStore, useWeatherStore } from '@/stores';
 import { reverseGeocode } from '@/lib/api';
 import { Location } from '@/types/location';
+import { cn } from '@/lib/utils';
 
 // Components
 import { Header } from '@/components/layout';
@@ -12,6 +13,7 @@ import { SearchDialog } from '@/components/search';
 import { FavoritesPanel } from '@/components/favorites';
 import { SettingsPanel } from '@/components/settings';
 import { ErrorSimulationPanel } from '@/components/dev';
+import { HistoryPanelCompact } from '@/components/history';
 import {
   CurrentWeather,
   HourlyForecast,
@@ -38,7 +40,7 @@ export default function HomePage() {
   const { data: historicalData, status: historicalStatus } = useHistoricalWeather();
   const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
   const { favorites } = useFavorites();
-  const { settings, devMode } = useAppStore();
+  const { settings, devMode, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
 
   // Auto-detect location on first load
@@ -72,12 +74,24 @@ export default function HomePage() {
     initLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save location when it changes
+  // Save location when it changes and add to history
   useEffect(() => {
-    if (location) {
+    if (location && weather) {
       localStorage.setItem('weather-last-location', JSON.stringify(location));
+      
+      // Add to browsing history with weather summary
+      addToHistory(location, {
+        temperature: weather.current.temperature,
+        weatherCode: weather.current.weatherCode,
+        isDay: weather.current.isDay,
+      });
+
+      // Mark as not first time user
+      if (isFirstTimeUser) {
+        setFirstTimeUser(false);
+      }
     }
-  }, [location]);
+  }, [location?.id, weather?.current.temperature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -115,7 +129,13 @@ export default function HomePage() {
   const showContent = weather && location;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transition-colors duration-300">
+    <div className={cn(
+      'min-h-screen transition-colors duration-300',
+      // Light mode background
+      'bg-linear-to-br from-slate-50 via-sky-50/30 to-slate-100',
+      // Dark mode background
+      'dark:from-slate-900 dark:via-slate-900 dark:to-slate-800'
+    )}>
       <Header
         onSearchClick={() => setIsSearchOpen(true)}
         onRefresh={refresh}
@@ -137,7 +157,7 @@ export default function HomePage() {
               }}
             />
             {geoError && (
-              <p className="text-center text-sm text-slate-500 mt-4">
+              <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
                 {geoError}
               </p>
             )}
@@ -184,7 +204,7 @@ export default function HomePage() {
               )}
               {historicalStatus === 'loading' && (
                 <Card>
-                  <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+                  <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
                   <SkeletonChart />
                 </Card>
               )}
@@ -194,6 +214,9 @@ export default function HomePage() {
             <div className="space-y-6">
               {/* Favorites */}
               <FavoritesPanel onSelect={handleSelectLocation} />
+
+              {/* Recently Viewed History */}
+              <HistoryPanelCompact onSelect={handleSelectLocation} />
 
               {/* Settings */}
               <SettingsPanel />
@@ -223,36 +246,36 @@ function LoadingSkeleton() {
         <SkeletonWeatherCard className="h-80" />
 
         <Card>
-          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
           <SkeletonHourlyForecast />
         </Card>
 
         <Card>
-          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
           <SkeletonDailyForecast />
         </Card>
       </div>
 
       <div className="space-y-6">
         <Card>
-          <div className="h-5 w-24 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="h-5 w-24 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl skeleton-shimmer"
+                className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse"
               />
             ))}
           </div>
         </Card>
 
         <Card>
-          <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="flex justify-between items-center">
-                <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded skeleton-shimmer" />
-                <div className="h-8 w-20 bg-slate-200 dark:bg-slate-700 rounded-lg skeleton-shimmer" />
+                <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                <div className="h-8 w-20 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse" />
               </div>
             ))}
           </div>
