@@ -130,8 +130,8 @@ function AnalogClock({
         'relative rounded-full flex items-center justify-center shrink-0',
         // Neumorphic clock face
         isDay 
-          ? 'bg-gradient-to-br from-sky-50 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50' 
-          : 'bg-gradient-to-br from-indigo-100 to-slate-200 dark:from-indigo-900/50 dark:to-slate-800/50',
+          ? 'bg-linear-to-br from-sky-50 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50' 
+          : 'bg-linear-to-br from-indigo-100 to-slate-200 dark:from-indigo-900/50 dark:to-slate-800/50',
         'shadow-[4px_4px_8px_rgba(174,184,194,0.4),-4px_-4px_8px_rgba(255,255,255,0.8),inset_0_0_4px_rgba(0,0,0,0.05)]',
         'dark:shadow-[4px_4px_8px_rgba(0,0,0,0.4),-4px_-4px_8px_rgba(60,70,85,0.2),inset_0_0_4px_rgba(0,0,0,0.1)]'
       )}
@@ -277,12 +277,12 @@ export function WorldClock({ className }: WorldClockProps) {
 
   // Search for cities
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
     const timeoutId = setTimeout(async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
       setIsSearching(true);
       try {
         const results = await searchLocations(searchQuery);
@@ -499,7 +499,7 @@ function ClockRow({
         isLocal
           ? cn(
               // Glassmorphism for local
-              'bg-gradient-to-r from-blue-500/15 to-cyan-500/10',
+              'bg-linear-to-r from-blue-500/15 to-cyan-500/10',
               'backdrop-blur-sm',
               'border border-blue-200/50 dark:border-blue-500/20',
               'shadow-[0_2px_8px_rgba(59,130,246,0.1),inset_0_1px_0_rgba(255,255,255,0.5)]',
