@@ -1,65 +1,263 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect, useCallback } from 'react';
+import { useWeather, useHistoricalWeather, useGeolocation, useFavorites } from '@/hooks';
+import { useAppStore, useWeatherStore } from '@/stores';
+import { reverseGeocode } from '@/lib/api';
+import { Location } from '@/types/location';
+
+// Components
+import { Header } from '@/components/layout';
+import { SearchDialog } from '@/components/search';
+import { FavoritesPanel } from '@/components/favorites';
+import { SettingsPanel } from '@/components/settings';
+import { ErrorSimulationPanel } from '@/components/dev';
+import {
+  CurrentWeather,
+  HourlyForecast,
+  DailyForecast,
+  WeatherDetails,
+  HistoricalChart,
+} from '@/components/weather';
+import {
+  ErrorState,
+  EmptyState,
+  SkeletonWeatherCard,
+  SkeletonHourlyForecast,
+  SkeletonDailyForecast,
+  SkeletonChart,
+  Card,
+} from '@/components/ui';
+
+export default function HomePage() {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Hooks
+  const { weather, location, status, error, isLoading, loadWeather, refresh } = useWeather();
+  const { data: historicalData, status: historicalStatus } = useHistoricalWeather();
+  const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
+  const { favorites } = useFavorites();
+  const { settings, devMode } = useAppStore();
+  const { reset: resetWeather } = useWeatherStore();
+
+  // Auto-detect location on first load
+  useEffect(() => {
+    const initLocation = async () => {
+      // Check if we have a stored location
+      const storedLocation = localStorage.getItem('weather-last-location');
+      if (storedLocation) {
+        try {
+          const parsed = JSON.parse(storedLocation);
+          loadWeather(parsed);
+          setIsInitialized(true);
+          return;
+        } catch {
+          // Invalid stored data, continue to geolocation
+        }
+      }
+
+      // Try to get user's location
+      const position = await getCurrentPosition();
+      if (position) {
+        const loc = await reverseGeocode(position.latitude, position.longitude);
+        if (loc) {
+          loadWeather(loc);
+          localStorage.setItem('weather-last-location', JSON.stringify(loc));
+        }
+      }
+      setIsInitialized(true);
+    };
+
+    initLocation();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save location when it changes
+  useEffect(() => {
+    if (location) {
+      localStorage.setItem('weather-last-location', JSON.stringify(location));
+    }
+  }, [location]);
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSelectLocation = useCallback(
+    (loc: Location) => {
+      loadWeather(loc);
+      setIsSearchOpen(false);
+    },
+    [loadWeather]
+  );
+
+  const handleDetectLocation = useCallback(async () => {
+    const position = await getCurrentPosition();
+    if (position) {
+      const loc = await reverseGeocode(position.latitude, position.longitude);
+      if (loc) {
+        loadWeather(loc);
+      }
+    }
+  }, [getCurrentPosition, loadWeather]);
+
+  const showLoading = !isInitialized || (isLoading && !weather);
+  const showError = error && !weather;
+  const showEmpty = isInitialized && !weather && !isLoading && !error;
+  const showContent = weather && location;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transition-colors duration-300">
+      <Header
+        onSearchClick={() => setIsSearchOpen(true)}
+        onRefresh={refresh}
+        onDetectLocation={handleDetectLocation}
+        isRefreshing={isLoading && !!weather}
+        isDetectingLocation={geoLoading}
+      />
+
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {showLoading && <LoadingSkeleton />}
+
+        {showError && (
+          <div className="max-w-lg mx-auto py-12">
+            <ErrorState
+              error={error}
+              onRetry={() => {
+                resetWeather();
+                handleDetectLocation();
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            {geoError && (
+              <p className="text-center text-sm text-slate-500 mt-4">
+                {geoError}
+              </p>
+            )}
+          </div>
+        )}
+
+        {showEmpty && (
+          <div className="max-w-lg mx-auto py-12">
+            <EmptyState
+              variant="location"
+              action={{
+                label: 'Search for a location',
+                onClick: () => setIsSearchOpen(true),
+              }}
+            />
+          </div>
+        )}
+
+        {showContent && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main content column */}
+            <div className="lg:col-span-2 space-y-6">
+              <CurrentWeather
+                weather={weather}
+                location={location}
+                unit={settings.temperatureUnit}
+              />
+
+              <HourlyForecast hourly={weather.hourly} />
+
+              <DailyForecast daily={weather.daily} />
+
+              <WeatherDetails
+                current={weather.current}
+                unit={settings.temperatureUnit}
+              />
+
+              {/* Historical chart */}
+              {historicalData && historicalStatus === 'success' && (
+                <HistoricalChart
+                  data={historicalData}
+                  unit={settings.temperatureUnit}
+                />
+              )}
+              {historicalStatus === 'loading' && (
+                <Card>
+                  <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+                  <SkeletonChart />
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Favorites */}
+              <FavoritesPanel onSelect={handleSelectLocation} />
+
+              {/* Settings */}
+              <SettingsPanel />
+
+              {/* Dev panel (only shown in dev mode) */}
+              {devMode && <ErrorSimulationPanel />}
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Search dialog */}
+      {isSearchOpen && (
+        <SearchDialog
+          onSelect={handleSelectLocation}
+          onClose={() => setIsSearchOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        <SkeletonWeatherCard className="h-80" />
+
+        <Card>
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <SkeletonHourlyForecast />
+        </Card>
+
+        <Card>
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <SkeletonDailyForecast />
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <Card>
+          <div className="h-5 w-24 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl skeleton-shimmer"
+              />
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded mb-4 skeleton-shimmer" />
+          <div className="space-y-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded skeleton-shimmer" />
+                <div className="h-8 w-20 bg-slate-200 dark:bg-slate-700 rounded-lg skeleton-shimmer" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
