@@ -1,5 +1,5 @@
 import { apiClient, checkSimulatedError } from './client';
-import { NominatimSearchResult, createApiError } from '@/types/api';
+import { NominatimSearchResult } from '@/types/api';
 import { SearchResult, Location } from '@/types/location';
 
 const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';

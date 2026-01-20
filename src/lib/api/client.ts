@@ -54,12 +54,12 @@ function handleHttpError(status: number): ApiError {
 }
 
 function handleFetchError(error: unknown): ApiError {
-  if (error instanceof Error) {
-    // Check if it's already an ApiError
-    if ('type' in error && 'retryable' in error) {
-      return error as ApiError;
-    }
+  // Check if it's already an ApiError (plain object with type and retryable)
+  if (error && typeof error === 'object' && 'type' in error && 'retryable' in error) {
+    return error as ApiError;
+  }
 
+  if (error instanceof Error) {
     if (error.name === 'AbortError') {
       return createApiError('NETWORK_ERROR', 'Request timed out. Please try again.');
     }

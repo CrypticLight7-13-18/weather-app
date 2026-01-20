@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, Button, IconButton, Toggle, Switch, Skeleton } from '@/components/ui';
 import { WeatherIcon, WeatherIconHero } from '@/components/weather';
+import { WeatherCode } from '@/types/weather';
 import { useTheme } from '@/hooks';
 import { 
-  Sun, Moon, Cloud, Droplets, Wind, Thermometer, 
+  Sun, Moon, Droplets,
   ChevronRight, Copy, Check, Home, Palette, Layers,
-  Zap, Box, Type, Clock, Settings, Star, MapPin,
-  RefreshCw, Search, Eye, Gauge, AlertTriangle,
-  CloudLightning
+  Zap, Box, Settings, Star, MapPin,
+  RefreshCw, Eye, AlertTriangle,
+  CloudLightning, FlaskConical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -61,14 +62,29 @@ export default function DocsPage() {
             </div>
           </div>
           
-          {/* Theme toggle */}
-          <IconButton
-            label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            onClick={toggleTheme}
-            className="hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <ThemeIcon className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-          </IconButton>
+          <div className="flex items-center gap-2">
+            {/* Tests link */}
+            <Link 
+              href="/tests"
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium',
+                'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                'hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'
+              )}
+            >
+              <FlaskConical className="h-4 w-4" />
+              Tests
+            </Link>
+            
+            {/* Theme toggle */}
+            <IconButton
+              label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              onClick={toggleTheme}
+              className="hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <ThemeIcon className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            </IconButton>
+          </div>
         </div>
       </header>
 
@@ -252,7 +268,7 @@ function IconsSection({ copyCode, copiedCode }: { copyCode: (c: string, id: stri
             return (
               <div key={code} className="flex flex-col items-center gap-3">
                 <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
-                  <WeatherIconHero code={code as any} isDay={true} />
+                  <WeatherIconHero code={code as WeatherCode} isDay={true} />
                 </div>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{info?.label}</span>
               </div>
@@ -273,14 +289,14 @@ function IconsSection({ copyCode, copiedCode }: { copyCode: (c: string, id: stri
           {[0, 2].map((code) => (
             <div key={code} className="space-y-4">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
-                <WeatherIcon code={code as any} isDay={true} size="xl" />
+                <WeatherIcon code={code as WeatherCode} isDay={true} size="xl" />
                 <div>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Day</p>
                   <p className="text-xs text-slate-500">isDay: true</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-slate-100 dark:from-indigo-900/20 dark:to-slate-800/50">
-                <WeatherIcon code={code as any} isDay={false} size="xl" />
+                <WeatherIcon code={code as WeatherCode} isDay={false} size="xl" />
                 <div>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Night</p>
                   <p className="text-xs text-slate-500">isDay: false</p>
@@ -297,8 +313,8 @@ function IconsSection({ copyCode, copiedCode }: { copyCode: (c: string, id: stri
           {weatherCodes.map((item) => (
             <div key={item.code} className="flex items-center gap-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               <div className="flex gap-3 shrink-0">
-                <WeatherIcon code={item.code as any} isDay={true} size="lg" />
-                <WeatherIcon code={item.code as any} isDay={false} size="lg" />
+                <WeatherIcon code={item.code as WeatherCode} isDay={true} size="lg" />
+                <WeatherIcon code={item.code as WeatherCode} isDay={false} size="lg" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">

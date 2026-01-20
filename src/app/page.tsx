@@ -35,10 +35,10 @@ export default function HomePage() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Hooks
-  const { weather, location, status, error, isLoading, loadWeather, refresh } = useWeather();
+  const { weather, location, error, isLoading, loadWeather, refresh } = useWeather();
   const { data: historicalData, status: historicalStatus } = useHistoricalWeather();
   const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
-  const { favorites } = useFavorites();
+  useFavorites(); // Initialize favorites hook for prefetching
   const { settings, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
 

@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import {
-  formatPercentage,
   formatPressure,
   formatWindSpeed,
   getWindDirection,

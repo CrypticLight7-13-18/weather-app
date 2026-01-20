@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores';
 import { Location } from '@/types/location';
 import { TemperatureUnit } from '@/types';
+import { WeatherCode } from '@/types/weather';
 import { Card, EmptyState, Button } from '@/components/ui';
 import { WeatherIcon } from '@/components/weather';
 import { formatTemperatureShort } from '@/lib/utils';
@@ -101,7 +102,7 @@ function HistoryItem({ entry, onSelect, onRemove, temperatureUnit }: HistoryItem
       >
         {weatherSummary ? (
           <WeatherIcon
-            code={weatherSummary.weatherCode as any}
+            code={weatherSummary.weatherCode}
             isDay={weatherSummary.isDay}
             size="sm"
           />
@@ -179,7 +180,7 @@ export function HistoryPanelCompact({ onSelect, className }: HistoryPanelProps) 
           >
             {entry.weatherSummary ? (
               <WeatherIcon
-                code={entry.weatherSummary.weatherCode as any}
+                code={entry.weatherSummary.weatherCode as WeatherCode}
                 isDay={entry.weatherSummary.isDay}
                 size="sm"
               />

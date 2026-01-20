@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAppStore, useWeatherStore } from '@/stores';
 import { fetchWeatherData } from '@/lib/api';
 import { Location } from '@/types/location';

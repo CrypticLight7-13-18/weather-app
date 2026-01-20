@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 import { IconButton } from '@/components/ui/button';
 import { useTheme } from '@/hooks';
 import { useAppStore } from '@/stores';
-import { Search, Sun, Moon, RefreshCw, MapPin, Settings, X } from 'lucide-react';
+import { Search, Sun, Moon, RefreshCw, MapPin, Settings, X, BookOpen, FlaskConical } from 'lucide-react';
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/ui/toggle';
@@ -170,7 +171,7 @@ export function Header({
             'bg-white border border-slate-200 text-slate-400',
             'dark:bg-slate-700 dark:border-slate-600 dark:text-slate-500'
           )}>
-            ⌘K
+            ⌘/Ctrl + K
           </kbd>
         </button>
 
@@ -310,6 +311,35 @@ export function Header({
                         size="sm"
                       />
                     </SettingRow>
+
+                    {/* Divider */}
+                    <div className="border-t border-slate-200/50 dark:border-slate-700/50 pt-4 mt-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mb-2">Resources</p>
+                      <div className="flex gap-2">
+                        <Link 
+                          href="/docs"
+                          className={cn(
+                            'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium',
+                            'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                            'hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'
+                          )}
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                          Docs
+                        </Link>
+                        <Link 
+                          href="/tests"
+                          className={cn(
+                            'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium',
+                            'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                            'hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'
+                          )}
+                        >
+                          <FlaskConical className="h-3.5 w-3.5" />
+                          Tests
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}

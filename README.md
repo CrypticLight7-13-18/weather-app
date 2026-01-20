@@ -7,6 +7,7 @@ A production-grade weather application built with Next.js 14+, featuring beautif
 ## Features
 
 ### Core Functionality
+
 - **Current Location Weather** - Auto-detect user location via Geolocation API
 - **Location Search** - Autocomplete search with debouncing (300ms) and recent searches history
 - **Favorites/Bookmarks** - Save locations to local storage with drag-to-reorder capability
@@ -15,6 +16,7 @@ A production-grade weather application built with Next.js 14+, featuring beautif
 - **Settings** - Unit toggle (Celsius/Fahrenheit), theme toggle (Light/Dark/System)
 
 ### Performance Features
+
 - Aggressive caching with Next.js fetch cache and revalidation
 - Skeleton loaders matching content layout (zero layout shift)
 - Optimistic UI updates for favorites
@@ -23,13 +25,13 @@ A production-grade weather application built with Next.js 14+, featuring beautif
 - Dynamic imports for chart components
 
 ### Error Handling
+
 - Network failures
 - Location not found
 - Geolocation permission denied
 - API rate limiting
 - Server errors
 - Missing/null data fields
-- **Developer-only error simulation panel**
 
 ## Tech Stack
 
@@ -38,15 +40,29 @@ A production-grade weather application built with Next.js 14+, featuring beautif
 - **Styling**: Tailwind CSS v4
 - **State Management**: Zustand with persist middleware
 - **Charts**: Recharts (dynamically imported)
+- **Animations**: Framer Motion
 - **APIs**: Open-Meteo (weather), Nominatim (geocoding)
-- **Icons**: Lucide React
+- **Icons**: Lucide React + Custom animated SVGs
 - **Date Utilities**: date-fns
+- **Testing**: Vitest, MSW, Testing Library
 
 ## Project Structure
 
-```
+```md
 src/
+├── __tests__/              # Test files
+│   ├── setup.ts           # Test setup (MSW server)
+│   ├── mocks/             # Mock handlers
+│   │   └── handlers.ts
+│   └── api/               # API tests
+│       ├── client.test.ts
+│       ├── weather.test.ts
+│       └── geocoding.test.ts
 ├── app/                    # Next.js App Router
+│   ├── docs/              # Design system documentation
+│   │   └── page.tsx
+│   ├── tests/             # UI test runner
+│   │   └── page.tsx
 │   ├── error.tsx          # Error boundary
 │   ├── globals.css        # Global styles & CSS variables
 │   ├── layout.tsx         # Root layout with providers
@@ -54,8 +70,6 @@ src/
 │   ├── not-found.tsx      # 404 page
 │   └── page.tsx           # Main page component
 ├── components/
-│   ├── dev/               # Developer tools
-│   │   └── error-simulation-panel.tsx
 │   ├── favorites/         # Favorites feature
 │   │   └── favorites-panel.tsx
 │   ├── layout/            # Layout components
@@ -199,6 +213,7 @@ const { query, results, setQuery, setResults } = useSearchStore();
 ## API Layer
 
 The API layer provides a centralized client with:
+
 - Automatic timeout handling
 - Error type classification
 - Request caching via Next.js fetch
@@ -219,16 +234,406 @@ const results = await searchLocations('New York');
 const location = await reverseGeocode(40.7128, -74.006);
 ```
 
-## Developer Mode
+## Testing
 
-Enable developer mode in Settings to access the Error Simulation Panel. This allows you to test how the application handles various error states:
+The application includes a comprehensive dual-layer testing strategy: **unit tests** with mocked APIs for fast, deterministic testing, and **integration tests** that verify real API behavior.
 
-- Network errors
-- Location not found
-- Geolocation denied
-- Rate limiting
-- Server errors
-- Invalid data
+### Why Two Test Suites?
+
+| Aspect | Unit Tests (Vitest) | Integration Tests (UI) |
+|--------|---------------------|------------------------|
+| **Purpose** | Test logic in isolation | Verify real API contracts |
+| **Speed** | Fast (~1 second) | Slower (network calls) |
+| **Reliability** | 100% deterministic | Depends on external APIs |
+| **Mocking** | Full API mocking via MSW | No mocking - real requests |
+| **When to run** | Every commit, CI/CD | Pre-deployment, debugging |
+| **Count** | 69 tests | 16 tests |
+
+---
+
+### Unit Tests (Vitest + MSW)
+
+Unit tests run via the terminal and use [MSW (Mock Service Worker)](https://mswjs.io/) to intercept HTTP requests, providing controlled responses without hitting real APIs.
+
+#### Running Unit Tests
+
+```bash
+# Run all tests once
+npm run test
+
+# Watch mode - rerun on file changes
+npm run test:watch
+
+# Vitest UI - visual browser interface
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+#### Test File Structure
+
+```
+src/__tests__/
+├── setup.ts                 # MSW server initialization
+├── mocks/
+│   └── handlers.ts          # Mock API response handlers
+└── api/
+    ├── client.test.ts       # API client tests (19 tests)
+    ├── weather.test.ts      # Weather API tests (21 tests)
+    └── geocoding.test.ts    # Geocoding API tests (29 tests)
+```
+
+#### Test Setup (`setup.ts`)
+
+```typescript
+import { setupServer } from 'msw/node';
+import { handlers } from './mocks/handlers';
+
+export const server = setupServer(...handlers);
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+```
+
+This configuration:
+- Starts MSW server before all tests
+- Resets handlers between tests (isolation)
+- Fails on unhandled requests (catches missing mocks)
+- Cleans up after all tests complete
+
+#### Mock Handlers (`mocks/handlers.ts`)
+
+The handlers file defines mock responses for all external APIs:
+
+```typescript
+// Success handlers (default)
+export const handlers = [
+  http.get('https://api.open-meteo.com/v1/forecast', () => {
+    return HttpResponse.json(mockWeatherResponse);
+  }),
+  http.get('https://nominatim.openstreetmap.org/search', () => {
+    return HttpResponse.json(mockSearchResults);
+  }),
+  // ... more handlers
+];
+
+// Error handlers (used per-test)
+export const errorHandlers = {
+  serverError: http.get('https://api.open-meteo.com/v1/forecast', () => {
+    return new HttpResponse(JSON.stringify({ error: 'Server Error' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }),
+  networkError: http.get('https://api.open-meteo.com/v1/forecast', () => {
+    return HttpResponse.error();
+  }),
+  // ... more error scenarios
+};
+```
+
+---
+
+### Detailed Test Breakdown
+
+#### 1. API Client Tests (`client.test.ts`) - 19 tests
+
+Tests the centralized fetch client that all API calls flow through.
+
+**Successful Requests (3 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should fetch and parse JSON data successfully` | Basic request/response cycle works |
+| `should include custom headers when provided` | Headers are properly forwarded |
+| `should use default timeout of 10 seconds` | Timeout configuration is applied |
+
+**HTTP Error Handling (7 tests)**
+| Test | Status Code | Expected Error Type |
+|------|-------------|---------------------|
+| `should handle 400 Bad Request` | 400 | `INVALID_DATA` |
+| `should handle 404 Not Found` | 404 | `LOCATION_NOT_FOUND` |
+| `should handle 429 Rate Limited` | 429 | `RATE_LIMITED` |
+| `should handle 500 Server Error` | 500 | `SERVER_ERROR` |
+| `should handle 502 Bad Gateway` | 502 | `SERVER_ERROR` |
+| `should handle 503 Service Unavailable` | 503 | `SERVER_ERROR` |
+| `should handle unknown HTTP status codes` | 418 | `UNKNOWN_ERROR` |
+
+**Network Error Handling (3 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should handle network failures` | Catches fetch failures gracefully |
+| `should handle request timeout` | AbortController cancels slow requests |
+| `should handle custom timeout values` | Per-request timeout override works |
+
+**JSON Parsing (2 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should handle invalid JSON response` | Malformed JSON doesn't crash |
+| `should handle empty response body` | Empty responses handled gracefully |
+
+**Error Simulation (4 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should set and get simulated error` | Error simulation state management |
+| `should throw when checkSimulatedError is called` | Simulated errors trigger correctly |
+| `should not throw when no simulated error` | Normal operation unaffected |
+| `should throw correct error type` | Each error type maps correctly |
+
+#### 2. Weather API Tests (`weather.test.ts`) - 21 tests
+
+Tests the Open-Meteo API integration and data transformation.
+
+**Successful Requests (8 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should fetch weather data for valid coordinates` | Basic fetch works |
+| `should transform current weather data correctly` | Raw API → app format mapping |
+| `should include UV index from daily data` | UV extraction from daily array |
+| `should transform hourly forecast correctly` | 48-hour forecast parsing |
+| `should transform daily forecast correctly` | 7-day forecast parsing |
+| `should use auto timezone by default` | Default timezone parameter |
+| `should use custom timezone when provided` | Timezone override works |
+| `should always request metric units` | Consistent unit requests |
+
+**Error Handling (4 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should handle missing current data` | Partial response handling |
+| `should handle server errors` | 500 errors bubble up correctly |
+| `should handle network errors` | Network failures handled |
+| `should handle simulated errors` | Dev error simulation works |
+
+**Data Validation (3 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should handle null values in response` | Null → default value fallback |
+| `should handle is_day as 0 (night)` | Boolean conversion for night |
+| `should validate weather codes are numbers` | Type checking on codes |
+
+**Historical Data (6 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should fetch historical data` | Archive API works |
+| `should transform historical data correctly` | Data structure mapping |
+| `should use default 30 days` | Default date range |
+| `should use custom days parameter` | Custom range works |
+| `should handle missing daily data` | Partial response handling |
+| `should handle server errors` | Error propagation |
+
+#### 3. Geocoding API Tests (`geocoding.test.ts`) - 29 tests
+
+Tests the Nominatim geocoding integration.
+
+**Input Validation (4 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should return empty array for empty query` | Empty string handling |
+| `should return empty array for whitespace` | Whitespace-only handling |
+| `should return empty array for single char` | Min length validation |
+| `should trim whitespace from query` | Input sanitization |
+
+**Successful Search (6 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should search and return results` | Basic search works |
+| `should transform search results correctly` | Result structure mapping |
+| `should include required fields` | All fields present |
+| `should limit results to 8` | Pagination parameter |
+| `should include proper headers` | User-Agent header sent |
+| `should filter for valid place types` | Only cities/towns returned |
+
+**Reverse Geocoding (5 tests)**
+| Test | What it verifies |
+|------|-----------------|
+| `should reverse geocode coordinates` | Lat/lon → location name |
+| `should use provided coordinates` | Coords preserved in result |
+| `should generate consistent ID` | ID format: `lat_lon` |
+| `should include proper headers` | User-Agent header sent |
+| `should return basic location on error` | Fallback behavior |
+
+**Edge Cases (14 tests)**
+- Empty results handling
+- Duplicate coordinate filtering
+- Display name formatting
+- Error propagation
+- Null response handling
+
+---
+
+### Integration Tests (UI Test Runner)
+
+The UI test runner at `/tests` makes **real API calls** to verify external services are working correctly.
+
+#### Accessing the Test Runner
+
+1. Start the dev server: `npm run dev`
+2. Navigate to `http://localhost:3000/tests`
+3. Click "Run All Tests" or run individual categories
+
+#### Test Categories (16 tests total)
+
+**API Client (3 tests)**
+- Successful API request to Open-Meteo
+- Invalid coordinates rejection (400 error)
+- Request timeout behavior
+
+**Weather API (5 tests)**
+- Fetch current weather structure
+- Fetch 48-hour hourly forecast
+- Fetch 7-day daily forecast
+- Metric units verification
+- Timezone handling
+
+**Geocoding (3 tests)**
+- Location search ("London")
+- Reverse geocoding (coordinates → city name)
+- Empty results for non-existent locations
+
+**Historical API (1 test)**
+- Fetch 30 days of historical data
+
+**Error Handling (2 tests)**
+- Network error detection (invalid domain)
+- Invalid JSON handling
+
+**Data Validation (2 tests)**
+- Coordinate precision in response
+- Weather code range validation (0-99)
+
+#### When to Use Integration Tests
+
+✅ **Use integration tests when:**
+- Deploying to production (smoke test)
+- Debugging API-related issues
+- Verifying after API provider changes
+- Testing from different networks/regions
+
+❌ **Don't rely on integration tests for:**
+- CI/CD pipelines (flaky due to network)
+- Rapid development iteration (too slow)
+- Testing error scenarios (can't force errors)
+
+---
+
+### Writing New Tests
+
+#### Adding a Unit Test
+
+```typescript
+// src/__tests__/api/weather.test.ts
+
+describe('New Feature', () => {
+  it('should do something specific', async () => {
+    // 1. Arrange - Set up mock if needed
+    server.use(
+      http.get('https://api.open-meteo.com/v1/forecast', () => {
+        return HttpResponse.json({ /* custom response */ });
+      })
+    );
+
+    // 2. Act - Call the function
+    const result = await fetchWeatherData({ latitude: 51.5, longitude: -0.1 });
+
+    // 3. Assert - Verify the outcome
+    expect(result).toBeDefined();
+    expect(result.current.temperature).toBeGreaterThan(-50);
+  });
+});
+```
+
+#### Adding an Integration Test
+
+```typescript
+// src/app/tests/page.tsx - add to apiTests array
+
+{
+  id: 'new-test-id',
+  name: 'Test Display Name',
+  description: 'What this test verifies',
+  category: 'Weather API', // or create new category
+  run: async () => {
+    const start = Date.now();
+    try {
+      const response = await fetch('https://api.example.com/endpoint');
+      const data = await response.json();
+      
+      return {
+        passed: data.someField === expectedValue,
+        message: 'Success message or failure reason',
+        duration: Date.now() - start,
+        details: `Optional extra info: ${data.someField}`,
+      };
+    } catch (error: unknown) {
+      return {
+        passed: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        duration: Date.now() - start,
+      };
+    }
+  },
+},
+```
+
+---
+
+### Test Configuration
+
+#### Vitest Config (`vitest.config.ts`)
+
+```typescript
+export default defineConfig({
+  test: {
+    environment: 'jsdom',        // Browser-like environment
+    globals: true,               // No need to import describe/it/expect
+    setupFiles: ['./src/__tests__/setup.ts'],
+    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/lib/api/**'],  // Focus coverage on API layer
+    },
+  },
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
+});
+```
+
+#### NPM Scripts
+
+```json
+{
+  "test": "vitest run",           // Single run, exit with code
+  "test:watch": "vitest",         // Watch mode for development
+  "test:ui": "vitest --ui",       // Browser-based test UI
+  "test:coverage": "vitest run --coverage"  // With coverage report
+}
+```
+
+---
+
+### Troubleshooting Tests
+
+**Tests fail with "unhandled request"**
+- Add missing mock handler in `handlers.ts`
+- Check URL matches exactly (including query params)
+
+**Tests pass locally but fail in CI**
+- Ensure `setup.ts` is in `setupFiles`
+- Check Node version matches
+- Verify no time-dependent assertions
+
+**Integration tests timeout**
+- Check network connectivity
+- Increase timeout if API is slow
+- Verify API endpoints haven't changed
+
+**MSW not intercepting requests**
+- Ensure server is started (`server.listen()`)
+- Check request URL matches handler pattern
+- Verify no typos in API URLs
 
 ## Keyboard Shortcuts
 
