@@ -3,7 +3,12 @@
 import { cn } from '@/lib/utils';
 import { IconButton } from '@/components/ui/button';
 import { useTheme } from '@/hooks';
-import { Search, Sun, Moon, Monitor, RefreshCw, MapPin } from 'lucide-react';
+import { useAppStore } from '@/stores';
+import { Search, Sun, Moon, Monitor, RefreshCw, MapPin, Settings, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Toggle } from '@/components/ui/toggle';
+import { TemperatureUnit, WindSpeedUnit, PressureUnit, PrecipitationUnit, Theme } from '@/types';
 
 interface HeaderProps {
   onSearchClick: () => void;
@@ -22,9 +27,79 @@ export function Header({
   isDetectingLocation,
   className,
 }: HeaderProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, toggleTheme } = useTheme();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const {
+    settings,
+    setTemperatureUnit,
+    setWindSpeedUnit,
+    setPressureUnit,
+    setPrecipitationUnit,
+    devMode,
+    toggleDevMode,
+  } = useAppStore();
+
+  // Close settings when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    if (isSettingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isSettingsOpen]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSettingsOpen(false);
+    };
+    if (isSettingsOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isSettingsOpen]);
 
   const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+
+  const temperatureOptions = [
+    { value: 'celsius' as TemperatureUnit, label: '°C' },
+    { value: 'fahrenheit' as TemperatureUnit, label: '°F' },
+  ];
+
+  const windSpeedOptions = [
+    { value: 'kmh' as WindSpeedUnit, label: 'km/h' },
+    { value: 'mph' as WindSpeedUnit, label: 'mph' },
+    { value: 'ms' as WindSpeedUnit, label: 'm/s' },
+  ];
+
+  const pressureOptions = [
+    { value: 'hpa' as PressureUnit, label: 'hPa' },
+    { value: 'inhg' as PressureUnit, label: 'inHg' },
+  ];
+
+  const precipitationOptions = [
+    { value: 'mm' as PrecipitationUnit, label: 'mm' },
+    { value: 'inch' as PrecipitationUnit, label: 'in' },
+  ];
+
+  const themeOptions = [
+    { value: 'light' as Theme, label: '☀️' },
+    { value: 'dark' as Theme, label: '🌙' },
+    { value: 'system' as Theme, label: '💻' },
+  ];
 
   return (
     <header
@@ -134,8 +209,143 @@ export function Header({
           >
             <ThemeIcon className="h-5 w-5 text-slate-500 dark:text-slate-400" />
           </IconButton>
+
+          {/* Settings button */}
+          <div className="relative">
+            <IconButton
+              ref={buttonRef}
+              label="Settings"
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={cn(
+                'hover:bg-slate-100 dark:hover:bg-slate-800',
+                isSettingsOpen && 'bg-slate-100 dark:bg-slate-800'
+              )}
+            >
+              <Settings className={cn(
+                'h-5 w-5 text-slate-500 dark:text-slate-400 transition-transform duration-200',
+                isSettingsOpen && 'rotate-90'
+              )} />
+            </IconButton>
+
+            {/* Settings popover */}
+            <AnimatePresence>
+              {isSettingsOpen && (
+                <motion.div
+                  ref={settingsRef}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className={cn(
+                    'absolute right-0 top-full mt-2 w-72 p-4 rounded-2xl',
+                    'bg-white dark:bg-slate-800',
+                    'border border-slate-200 dark:border-slate-700',
+                    'shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50',
+                    'z-50'
+                  )}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Settings</h3>
+                    <button
+                      onClick={() => setIsSettingsOpen(false)}
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Settings content */}
+                  <div className="space-y-4">
+                    {/* Theme */}
+                    <SettingRow label="Theme">
+                      <Toggle
+                        options={themeOptions}
+                        value={theme}
+                        onChange={setTheme}
+                        size="sm"
+                      />
+                    </SettingRow>
+
+                    {/* Temperature */}
+                    <SettingRow label="Temperature">
+                      <Toggle
+                        options={temperatureOptions}
+                        value={settings.temperatureUnit}
+                        onChange={setTemperatureUnit}
+                        size="sm"
+                      />
+                    </SettingRow>
+
+                    {/* Wind Speed */}
+                    <SettingRow label="Wind Speed">
+                      <Toggle
+                        options={windSpeedOptions}
+                        value={settings.windSpeedUnit}
+                        onChange={setWindSpeedUnit}
+                        size="sm"
+                      />
+                    </SettingRow>
+
+                    {/* Pressure */}
+                    <SettingRow label="Pressure">
+                      <Toggle
+                        options={pressureOptions}
+                        value={settings.pressureUnit}
+                        onChange={setPressureUnit}
+                        size="sm"
+                      />
+                    </SettingRow>
+
+                    {/* Precipitation */}
+                    <SettingRow label="Precipitation">
+                      <Toggle
+                        options={precipitationOptions}
+                        value={settings.precipitationUnit}
+                        onChange={setPrecipitationUnit}
+                        size="sm"
+                      />
+                    </SettingRow>
+
+                    {/* Developer mode */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                      <button
+                        onClick={toggleDevMode}
+                        className={cn(
+                          'w-full flex items-center justify-between p-2 rounded-lg',
+                          'text-xs font-medium transition-colors',
+                          devMode
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        )}
+                      >
+                        <span>Developer Mode</span>
+                        <span className={cn(
+                          'px-1.5 py-0.5 rounded text-[10px] font-bold',
+                          devMode
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-300'
+                        )}>
+                          {devMode ? 'ON' : 'OFF'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </header>
+  );
+}
+
+function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-xs text-slate-600 dark:text-slate-400">{label}</span>
+      {children}
+    </div>
   );
 }

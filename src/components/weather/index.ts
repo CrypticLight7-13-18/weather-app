@@ -4,4 +4,5 @@ export { HourlyForecast } from './hourly-forecast';
 export { DailyForecast } from './daily-forecast';
 export { WeatherDetails } from './weather-details';
 export { HistoricalChart } from './historical-chart';
+export { WorldClock } from './world-clock';
 

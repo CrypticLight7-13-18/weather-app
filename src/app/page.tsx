@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout';
 import { SearchDialog } from '@/components/search';
 import { FavoritesPanel } from '@/components/favorites';
-import { SettingsPanel } from '@/components/settings';
 import { ErrorSimulationPanel } from '@/components/dev';
 import { HistoryPanelCompact } from '@/components/history';
 import {
@@ -20,6 +19,7 @@ import {
   DailyForecast,
   WeatherDetails,
   HistoricalChart,
+  WorldClock,
 } from '@/components/weather';
 import {
   ErrorState,
@@ -218,14 +218,14 @@ export default function HomePage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* World Clock */}
+              <WorldClock />
+
               {/* Favorites */}
               <FavoritesPanel onSelect={handleSelectLocation} />
 
               {/* Recently Viewed History */}
               <HistoryPanelCompact onSelect={handleSelectLocation} />
-
-              {/* Settings */}
-              <SettingsPanel />
 
               {/* Dev panel (only shown in dev mode) */}
               {devMode && <ErrorSimulationPanel />}
