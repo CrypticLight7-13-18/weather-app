@@ -296,15 +296,24 @@ export function CurrentWeather({
               Feels like {formatTemperature(current.feelsLike, settings.temperatureUnit)}
             </p>
           </div>
+          
+          {/* Weather Icon with backdrop */}
           <motion.div
-            initial={{ scale: 0.8, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className={cn(
+              'relative p-4 rounded-3xl',
+              // Soft backdrop for better icon visibility
+              'bg-white/20 dark:bg-black/10',
+              'backdrop-blur-md',
+              'border border-white/30 dark:border-white/10',
+              'shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_20px_rgba(0,0,0,0.1)]'
+            )}
           >
             <WeatherIconHero
               code={current.weatherCode}
               isDay={current.isDay}
-              className="mr-4"
             />
           </motion.div>
         </div>

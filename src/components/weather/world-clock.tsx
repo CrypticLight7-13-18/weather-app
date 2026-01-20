@@ -241,33 +241,6 @@ export function WorldClock({ className }: WorldClockProps) {
     }
   }, [isAdding]);
 
-  // Search for cities
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const timeoutId = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const results = await searchLocations(searchQuery);
-        const clockCities: ClockCity[] = results.slice(0, 5).map(r => ({
-          id: `${r.latitude}-${r.longitude}`,
-          city: r.name,
-          country: r.country,
-          timezone: getTimezoneForCoords(r.latitude, r.longitude),
-        }));
-        setSearchResults(clockCities);
-      } catch {
-        setSearchResults([]);
-      }
-      setIsSearching(false);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
   // Estimate timezone from coordinates (simplified)
   function getTimezoneForCoords(lat: number, lon: number): string {
     // This is a rough estimate - ideally we'd use a timezone database
@@ -301,6 +274,33 @@ export function WorldClock({ className }: WorldClockProps) {
     };
     return timezones[offset] || 'UTC';
   }
+
+  // Search for cities
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await searchLocations(searchQuery);
+        const clockCities: ClockCity[] = results.slice(0, 5).map(r => ({
+          id: `${r.latitude}-${r.longitude}`,
+          city: r.name,
+          country: r.country,
+          timezone: getTimezoneForCoords(r.latitude, r.longitude),
+        }));
+        setSearchResults(clockCities);
+      } catch {
+        setSearchResults([]);
+      }
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const addCity = useCallback((city: ClockCity) => {
     if (cities.length >= 5) return;

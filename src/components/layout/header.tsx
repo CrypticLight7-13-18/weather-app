@@ -27,7 +27,7 @@ export function Header({
   isDetectingLocation,
   className,
 }: HeaderProps) {
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -72,7 +72,12 @@ export function Header({
     }
   }, [isSettingsOpen]);
 
-  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const ThemeIcon = theme === 'dark' ? Moon : Sun;
+  
+  // Simple toggle between light and dark only (system option only in settings)
+  const toggleLightDark = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   const temperatureOptions = [
     { value: 'celsius' as TemperatureUnit, label: '°C' },
@@ -201,8 +206,8 @@ export function Header({
           </IconButton>
           
           <IconButton
-            label={`Switch to ${theme === 'dark' ? 'light' : theme === 'light' ? 'auto' : 'dark'} theme`}
-            onClick={toggleTheme}
+            label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            onClick={toggleLightDark}
             className="hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ThemeIcon className="h-5 w-5 text-slate-500 dark:text-slate-400" />

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui';
-import { CloudOff, Home, Search } from 'lucide-react';
+import { CloudOff, Home } from 'lucide-react';
 
 export default function NotFound() {
   return (

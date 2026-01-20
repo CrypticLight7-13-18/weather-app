@@ -63,13 +63,6 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       lg: 'p-5 sm:p-6',
     };
 
-    const glowStyles = {
-      none: '',
-      blue: 'shadow-[0_0_40px_-8px_rgba(59,130,246,0.3)] dark:shadow-[0_0_40px_-8px_rgba(59,130,246,0.4)]',
-      purple: 'shadow-[0_0_40px_-8px_rgba(139,92,246,0.3)] dark:shadow-[0_0_40px_-8px_rgba(139,92,246,0.4)]',
-      amber: 'shadow-[0_0_40px_-8px_rgba(245,158,11,0.3)] dark:shadow-[0_0_40px_-8px_rgba(245,158,11,0.4)]',
-    };
-
     const hoverStyles = hover
       ? cn(
           'transition-all duration-300 cursor-pointer',
@@ -79,6 +72,41 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         )
       : 'transition-all duration-200';
 
+    // For glow effect, we use a wrapper approach to avoid shadow conflicts
+    if (glow !== 'none') {
+      const glowColors = {
+        blue: 'rgba(59, 130, 246, 0.5)',
+        purple: 'rgba(139, 92, 246, 0.5)',
+        amber: 'rgba(245, 158, 11, 0.5)',
+      };
+
+      return (
+        <div className="relative">
+          {/* Glow layer */}
+          <div
+            className="absolute inset-0 rounded-3xl blur-xl opacity-60 -z-10"
+            style={{ 
+              background: `radial-gradient(ellipse at center, ${glowColors[glow]} 0%, transparent 70%)`,
+              transform: 'scale(1.1)',
+            }}
+          />
+          <div
+            ref={ref}
+            className={cn(
+              'rounded-3xl relative',
+              variantStyles[variant],
+              paddingStyles[padding],
+              hoverStyles,
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         ref={ref}
@@ -86,7 +114,6 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           'rounded-3xl',
           variantStyles[variant],
           paddingStyles[padding],
-          glowStyles[glow],
           hoverStyles,
           className
         )}
