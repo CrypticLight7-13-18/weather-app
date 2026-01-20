@@ -14,53 +14,45 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', padding = 'md', hover = false, glow = 'none', children, ...props }, ref) => {
     const variantStyles = {
       default: cn(
-        // Light mode - soft neumorphic
-        'bg-slate-50/80',
-        'shadow-[6px_6px_12px_rgba(163,177,198,0.35),-6px_-6px_12px_rgba(255,255,255,0.9)]',
-        'border border-white/60',
-        // Dark mode - dark neumorphic
-        'dark:bg-slate-800/90',
-        'dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(55,65,81,0.3)]',
-        'dark:border-slate-700/30'
+        // Light mode - neumorphic card matching background
+        'bg-[#e8eef5] dark:bg-slate-800',
+        'shadow-[6px_6px_12px_rgba(163,177,198,0.6),-6px_-6px_12px_rgba(255,255,255,0.8)]',
+        'dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(55,65,81,0.25)]'
       ),
       glass: cn(
-        // Glassmorphism
-        'bg-white/40 dark:bg-slate-900/40',
-        'backdrop-blur-2xl backdrop-saturate-200',
-        'border border-white/50 dark:border-white/10',
-        'shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(255,255,255,0.1)]',
-        'dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+        // Glassmorphism - subtle transparency over neumorphic bg
+        'bg-white/50 dark:bg-slate-800/60',
+        'backdrop-blur-xl backdrop-saturate-150',
+        'border border-white/60 dark:border-white/10',
+        'shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'dark:shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]'
       ),
       gradient: cn(
         // Glass with gradient
-        'bg-gradient-to-br from-white/60 via-white/40 to-slate-100/60',
-        'dark:from-slate-800/60 dark:via-slate-800/40 dark:to-slate-900/60',
+        'bg-gradient-to-br from-white/70 via-white/50 to-[#e8eef5]/80',
+        'dark:from-slate-800/70 dark:via-slate-800/50 dark:to-slate-900/70',
         'backdrop-blur-xl backdrop-saturate-150',
-        'border border-white/40 dark:border-white/5',
-        'shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.6)]',
+        'border border-white/50 dark:border-white/5',
+        'shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)]',
         'dark:shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]'
       ),
       elevated: cn(
-        // Elevated glassmorphism
-        'bg-white/70 dark:bg-slate-800/70',
-        'backdrop-blur-xl',
-        'border border-white/60 dark:border-slate-700/40',
-        'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)]',
-        'dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)]'
+        // Elevated soft shadow
+        'bg-[#e8eef5] dark:bg-slate-800',
+        'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12),8px_8px_16px_rgba(163,177,198,0.4),-8px_-8px_16px_rgba(255,255,255,0.7)]',
+        'dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4),8px_8px_16px_rgba(0,0,0,0.3),-8px_-8px_16px_rgba(55,65,81,0.2)]'
       ),
       neumorph: cn(
         // Full neumorphism - raised effect
-        'bg-slate-100 dark:bg-slate-800',
-        'shadow-[8px_8px_16px_rgba(174,184,194,0.5),-8px_-8px_16px_rgba(255,255,255,0.8)]',
-        'dark:shadow-[8px_8px_16px_rgba(0,0,0,0.5),-8px_-8px_16px_rgba(60,70,85,0.3)]',
-        'border-none'
+        'bg-[#e8eef5] dark:bg-slate-800',
+        'shadow-[8px_8px_16px_rgba(163,177,198,0.6),-8px_-8px_16px_rgba(255,255,255,0.9)]',
+        'dark:shadow-[8px_8px_16px_rgba(0,0,0,0.5),-8px_-8px_16px_rgba(60,70,85,0.3)]'
       ),
       'neumorph-inset': cn(
         // Inset neumorphism - pressed effect
-        'bg-slate-100 dark:bg-slate-800',
-        'shadow-[inset_4px_4px_8px_rgba(174,184,194,0.4),inset_-4px_-4px_8px_rgba(255,255,255,0.7)]',
-        'dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.4),inset_-4px_-4px_8px_rgba(60,70,85,0.2)]',
-        'border-none'
+        'bg-[#e8eef5] dark:bg-slate-800',
+        'shadow-[inset_4px_4px_8px_rgba(163,177,198,0.5),inset_-4px_-4px_8px_rgba(255,255,255,0.8)]',
+        'dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.4),inset_-4px_-4px_8px_rgba(60,70,85,0.2)]'
       ),
     };
 

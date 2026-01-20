@@ -105,12 +105,12 @@ export function Header({
     <header
       className={cn(
         'sticky top-0 z-40',
-        // Enhanced glassmorphism
-        'bg-white/60 dark:bg-slate-900/60',
-        'backdrop-blur-2xl backdrop-saturate-200',
-        'border-b border-white/40 dark:border-white/5',
-        'shadow-[0_4px_30px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.6)]',
-        'dark:shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]',
+        // Neumorphic header - matches background
+        'bg-[#e8eef5]/95 dark:bg-slate-900/95',
+        'backdrop-blur-xl',
+        'border-b border-white/50 dark:border-slate-700/30',
+        'shadow-[0_4px_20px_rgba(163,177,198,0.3)]',
+        'dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]',
         'px-4 py-3',
         className
       )}
@@ -150,14 +150,13 @@ export function Header({
           onClick={onSearchClick}
           className={cn(
             'flex-1 max-w-md flex items-center gap-3 px-4 py-2.5 rounded-2xl',
-            // Neumorphic inset style
-            'bg-slate-100/80 dark:bg-slate-800/50',
-            'shadow-[inset_2px_2px_4px_rgba(174,184,194,0.3),inset_-2px_-2px_4px_rgba(255,255,255,0.7)]',
-            'dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3),inset_-2px_-2px_4px_rgba(60,70,85,0.2)]',
-            'border border-white/40 dark:border-white/5',
+            // Neumorphic inset search bar
+            'bg-[#e8eef5] dark:bg-slate-800',
+            'shadow-[inset_3px_3px_6px_rgba(163,177,198,0.5),inset_-3px_-3px_6px_rgba(255,255,255,0.8)]',
+            'dark:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.4),inset_-3px_-3px_6px_rgba(60,70,85,0.2)]',
             'text-slate-500 dark:text-slate-400',
-            'hover:shadow-[inset_1px_1px_2px_rgba(174,184,194,0.3),inset_-1px_-1px_2px_rgba(255,255,255,0.7)]',
-            'dark:hover:shadow-[inset_1px_1px_2px_rgba(0,0,0,0.3),inset_-1px_-1px_2px_rgba(60,70,85,0.2)]',
+            'hover:shadow-[inset_2px_2px_4px_rgba(163,177,198,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.8)]',
+            'dark:hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.4),inset_-2px_-2px_4px_rgba(60,70,85,0.2)]',
             'transition-all duration-200'
           )}
         >

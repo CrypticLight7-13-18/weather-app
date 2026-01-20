@@ -1,6 +1,20 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  :root {
+    /* Neumorphic base colors */
+    --bg-neumorph: #e8eef5;
+    --shadow-light: rgba(255, 255, 255, 0.8);
+    --shadow-dark: rgba(174, 184, 194, 0.5);
+  }
+
+  .dark {
+    --bg-neumorph: #1e293b;
+    --shadow-light: rgba(60, 70, 85, 0.3);
+    --shadow-dark: rgba(0, 0, 0, 0.5);
+  }
+
   html {
     @apply scroll-smooth antialiased;
     color-scheme: light dark;
@@ -8,6 +22,7 @@
 
   body {
     @apply min-h-screen;
+    background-color: var(--bg-neumorph);
   }
 
   :focus-visible {
@@ -33,69 +48,39 @@
     @apply border border-white/30 dark:border-white/5;
   }
 
-  /* Neumorphism utilities */
+  /* Neumorphism utilities - uses CSS vars for consistent theming */
   .neumorph {
-    @apply bg-slate-100 dark:bg-slate-800;
+    background-color: var(--bg-neumorph);
     box-shadow: 
-      8px 8px 16px rgba(174, 184, 194, 0.5),
-      -8px -8px 16px rgba(255, 255, 255, 0.8);
-  }
-
-  .dark .neumorph {
-    box-shadow: 
-      8px 8px 16px rgba(0, 0, 0, 0.5),
-      -8px -8px 16px rgba(60, 70, 85, 0.3);
+      8px 8px 16px var(--shadow-dark),
+      -8px -8px 16px var(--shadow-light);
   }
 
   .neumorph-inset {
-    @apply bg-slate-100 dark:bg-slate-800;
+    background-color: var(--bg-neumorph);
     box-shadow: 
-      inset 4px 4px 8px rgba(174, 184, 194, 0.4),
-      inset -4px -4px 8px rgba(255, 255, 255, 0.7);
-  }
-
-  .dark .neumorph-inset {
-    box-shadow: 
-      inset 4px 4px 8px rgba(0, 0, 0, 0.4),
-      inset -4px -4px 8px rgba(60, 70, 85, 0.2);
+      inset 4px 4px 8px var(--shadow-dark),
+      inset -4px -4px 8px var(--shadow-light);
   }
 
   .neumorph-btn {
-    @apply bg-slate-100 dark:bg-slate-800;
+    background-color: var(--bg-neumorph);
     box-shadow: 
-      4px 4px 8px rgba(174, 184, 194, 0.4),
-      -4px -4px 8px rgba(255, 255, 255, 0.7);
+      4px 4px 8px var(--shadow-dark),
+      -4px -4px 8px var(--shadow-light);
     transition: all 0.2s ease;
-  }
-
-  .dark .neumorph-btn {
-    box-shadow: 
-      4px 4px 8px rgba(0, 0, 0, 0.4),
-      -4px -4px 8px rgba(60, 70, 85, 0.2);
   }
 
   .neumorph-btn:hover {
     box-shadow: 
-      2px 2px 4px rgba(174, 184, 194, 0.4),
-      -2px -2px 4px rgba(255, 255, 255, 0.7);
-  }
-
-  .dark .neumorph-btn:hover {
-    box-shadow: 
-      2px 2px 4px rgba(0, 0, 0, 0.4),
-      -2px -2px 4px rgba(60, 70, 85, 0.2);
+      2px 2px 4px var(--shadow-dark),
+      -2px -2px 4px var(--shadow-light);
   }
 
   .neumorph-btn:active {
     box-shadow: 
-      inset 2px 2px 4px rgba(174, 184, 194, 0.4),
-      inset -2px -2px 4px rgba(255, 255, 255, 0.7);
-  }
-
-  .dark .neumorph-btn:active {
-    box-shadow: 
-      inset 2px 2px 4px rgba(0, 0, 0, 0.4),
-      inset -2px -2px 4px rgba(60, 70, 85, 0.2);
+      inset 2px 2px 4px var(--shadow-dark),
+      inset -2px -2px 4px var(--shadow-light);
   }
 
   /* Glow effects */
