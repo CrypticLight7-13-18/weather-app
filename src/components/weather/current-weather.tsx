@@ -96,14 +96,14 @@ export function CurrentWeather({
               label={isLocationFavorite ? 'Remove from favorites' : 'Add to favorites'}
               onClick={toggleFavorite}
               className={cn(
-                'bg-white/20 hover:bg-white/30',
+                'bg-white/20 hover:bg-white/30 backdrop-blur-sm',
                 condition.textColor
               )}
             >
               <Star 
                 className={cn(
                   'h-5 w-5 transition-all duration-200',
-                  isLocationFavorite && 'fill-current text-yellow-400'
+                  isLocationFavorite ? 'fill-yellow-400 text-yellow-400' : ''
                 )} 
               />
             </IconButton>

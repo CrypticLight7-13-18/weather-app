@@ -128,6 +128,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       ref={ref}
       variant="icon"
       aria-label={label}
+      title={label}
       className={cn('rounded-full', className)}
       {...props}
     />
