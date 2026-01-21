@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, PanInfo, useMotionValue, Reorder, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, useMotionValue, Reorder } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Location } from '@/types/location';
 import { WeatherData, HistoricalData, WEATHER_CONDITIONS, WeatherCode } from '@/types/weather';
@@ -525,8 +525,8 @@ interface LocationListModalProps {
     settings: Settings;
 }
 
-// Draggable location item wrapper with its own drag controls
-function DraggableLocationItem({
+// Location card content (shared between draggable and static items)
+function LocationCardContent({
     loc,
     index,
     currentIndex,
@@ -534,6 +534,7 @@ function DraggableLocationItem({
     onSelect,
     onRemove,
     settings,
+    showDragHandle = false,
 }: {
     loc: LocationWeather;
     index: number;
@@ -542,155 +543,126 @@ function DraggableLocationItem({
     onSelect: () => void;
     onRemove: () => void;
     settings: Settings;
+    showDragHandle?: boolean;
 }) {
-    const dragControls = useDragControls();
     const isSelected = index === currentIndex && !isEditMode;
     const canEdit = !loc.isMyLocation;
     const hasError = loc.error && !loc.weather;
     const isLoading = loc.isLoading && !loc.weather;
 
     return (
-        <Reorder.Item
-            value={loc}
-            dragListener={false}
-            dragControls={dragControls}
-            transition={{ 
-                type: 'spring', 
-                stiffness: 400, 
-                damping: 30,
-                mass: 0.8,
-            }}
-            whileDrag={{ 
-                scale: 1.03, 
-                boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.5)',
-                zIndex: 50,
-                cursor: 'grabbing',
-            }}
-            layout
-            className="relative"
-            style={{ 
-                touchAction: isEditMode && canEdit ? 'none' : 'auto',
-            }}
+        <div
+            className={cn(
+                'relative flex items-center gap-3 p-4 rounded-2xl',
+                'bg-linear-to-br transition-colors duration-200',
+                isSelected
+                    ? 'from-blue-500/30 to-purple-500/30 ring-2 ring-white/30'
+                    : 'from-slate-800/90 to-slate-700/90',
+                isEditMode && canEdit && 'ring-1 ring-white/10'
+            )}
         >
-            <motion.div
-                layout="position"
-                className={cn(
-                    'relative flex items-center gap-3 p-4 rounded-2xl',
-                    'bg-linear-to-br transition-colors duration-200',
-                    isSelected
-                        ? 'from-blue-500/30 to-purple-500/30 ring-2 ring-white/30'
-                        : 'from-slate-800/90 to-slate-700/90',
-                    isEditMode && canEdit && 'ring-1 ring-white/10'
+            {/* Delete button (iOS style - red circle with minus) */}
+            <AnimatePresence mode="popLayout">
+                {isEditMode && canEdit && (
+                    <motion.button
+                        initial={{ width: 0, opacity: 0, marginRight: 0 }}
+                        animate={{ width: 28, opacity: 1, marginRight: 8 }}
+                        exit={{ width: 0, opacity: 0, marginRight: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove();
+                        }}
+                        className="shrink-0 h-7 rounded-full bg-red-500 flex items-center justify-center shadow-lg overflow-hidden"
+                    >
+                        <Minus className="w-4 h-4 text-white" strokeWidth={3} />
+                    </motion.button>
                 )}
+            </AnimatePresence>
+
+            {/* Main content - clickable when not in edit mode */}
+            <div 
+                className={cn(
+                    'flex-1 min-w-0 flex items-center justify-between',
+                    !isEditMode && 'cursor-pointer active:opacity-70'
+                )}
+                onClick={() => !isEditMode && onSelect()}
             >
-                {/* Delete button (iOS style - red circle with minus) */}
-                <AnimatePresence mode="popLayout">
-                    {isEditMode && canEdit && (
-                        <motion.button
-                            initial={{ width: 0, opacity: 0, marginRight: 0 }}
-                            animate={{ width: 28, opacity: 1, marginRight: 8 }}
-                            exit={{ width: 0, opacity: 0, marginRight: 0 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemove();
-                            }}
-                            className="shrink-0 h-7 rounded-full bg-red-500 flex items-center justify-center shadow-lg overflow-hidden"
-                        >
-                            <Minus className="w-4 h-4 text-white" strokeWidth={3} />
-                        </motion.button>
-                    )}
-                </AnimatePresence>
-
-                {/* Main content - clickable when not in edit mode */}
-                <div 
-                    className={cn(
-                        'flex-1 min-w-0 flex items-center justify-between',
-                        !isEditMode && 'cursor-pointer active:opacity-70'
-                    )}
-                    onClick={() => !isEditMode && onSelect()}
-                >
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                            {loc.isMyLocation && (
-                                <Navigation className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                            )}
-                            <span className="font-medium text-white truncate">
-                                {loc.isMyLocation ? 'My Location' : loc.location.name}
-                            </span>
-                        </div>
-                        {loc.isMyLocation && loc.location.name && (
-                            <p className="text-sm text-white/60 truncate mt-0.5">
-                                {loc.location.name}
-                            </p>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                        {loc.isMyLocation && (
+                            <Navigation className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         )}
-                        <p className="text-xs text-white/50 mt-1">
-                            {hasError ? (
-                                <span className="text-red-400">Unable to load</span>
-                            ) : isLoading ? (
-                                'Loading...'
-                            ) : loc.weather ? (
-                                WEATHER_CONDITIONS[loc.weather.current.weatherCode as WeatherCode]?.label || 'Unknown'
-                            ) : (
-                                'No data'
-                            )}
+                        <span className="font-medium text-white truncate">
+                            {loc.isMyLocation ? 'My Location' : loc.location.name}
+                        </span>
+                    </div>
+                    {loc.isMyLocation && loc.location.name && (
+                        <p className="text-sm text-white/60 truncate mt-0.5">
+                            {loc.location.name}
                         </p>
-                    </div>
-
-                    {/* Temperature */}
-                    <div className="text-right shrink-0 ml-4">
+                    )}
+                    <p className="text-xs text-white/50 mt-1">
                         {hasError ? (
-                            <span className="text-2xl font-light text-white/30">--°</span>
+                            <span className="text-red-400">Unable to load</span>
                         ) : isLoading ? (
-                            <div className="w-14 h-10 bg-white/10 rounded-lg animate-pulse" />
+                            'Loading...'
                         ) : loc.weather ? (
-                            <>
-                                <span className="text-3xl font-light text-white tabular-nums">
-                                    {Math.round(
-                                        settings.temperatureUnit === 'fahrenheit'
-                                            ? loc.weather.current.temperature * 9 / 5 + 32
-                                            : loc.weather.current.temperature
-                                    )}°
-                                </span>
-                                <div className="text-xs text-white/50 mt-0.5 tabular-nums">
-                                    H:{Math.round(
-                                        settings.temperatureUnit === 'fahrenheit'
-                                            ? loc.weather.daily[0].temperatureMax * 9 / 5 + 32
-                                            : loc.weather.daily[0].temperatureMax
-                                    )}° L:{Math.round(
-                                        settings.temperatureUnit === 'fahrenheit'
-                                            ? loc.weather.daily[0].temperatureMin * 9 / 5 + 32
-                                            : loc.weather.daily[0].temperatureMin
-                                    )}°
-                                </div>
-                            </>
+                            WEATHER_CONDITIONS[loc.weather.current.weatherCode as WeatherCode]?.label || 'Unknown'
                         ) : (
-                            <span className="text-2xl font-light text-white/30">--°</span>
+                            'No data'
                         )}
-                    </div>
+                    </p>
                 </div>
 
-                {/* Drag handle (iOS style - three lines) */}
-                <AnimatePresence mode="popLayout">
-                    {isEditMode && canEdit && (
-                        <motion.div
-                            initial={{ width: 0, opacity: 0, marginLeft: 0 }}
-                            animate={{ width: 24, opacity: 1, marginLeft: 8 }}
-                            exit={{ width: 0, opacity: 0, marginLeft: 0 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                            className="shrink-0 touch-none cursor-grab active:cursor-grabbing flex items-center justify-center overflow-hidden"
-                            onPointerDown={(e) => {
-                                if (canEdit) {
-                                    dragControls.start(e);
-                                }
-                            }}
-                        >
-                            <Menu className="w-5 h-5 text-white/40" />
-                        </motion.div>
+                {/* Temperature */}
+                <div className="text-right shrink-0 ml-4">
+                    {hasError ? (
+                        <span className="text-2xl font-light text-white/30">--°</span>
+                    ) : isLoading ? (
+                        <div className="w-14 h-10 bg-white/10 rounded-lg animate-pulse" />
+                    ) : loc.weather ? (
+                        <>
+                            <span className="text-3xl font-light text-white tabular-nums">
+                                {Math.round(
+                                    settings.temperatureUnit === 'fahrenheit'
+                                        ? loc.weather.current.temperature * 9 / 5 + 32
+                                        : loc.weather.current.temperature
+                                )}°
+                            </span>
+                            <div className="text-xs text-white/50 mt-0.5 tabular-nums">
+                                H:{Math.round(
+                                    settings.temperatureUnit === 'fahrenheit'
+                                        ? loc.weather.daily[0].temperatureMax * 9 / 5 + 32
+                                        : loc.weather.daily[0].temperatureMax
+                                )}° L:{Math.round(
+                                    settings.temperatureUnit === 'fahrenheit'
+                                        ? loc.weather.daily[0].temperatureMin * 9 / 5 + 32
+                                        : loc.weather.daily[0].temperatureMin
+                                )}°
+                            </div>
+                        </>
+                    ) : (
+                        <span className="text-2xl font-light text-white/30">--°</span>
                     )}
-                </AnimatePresence>
-            </motion.div>
-        </Reorder.Item>
+                </div>
+            </div>
+
+            {/* Drag handle (iOS style - three lines) */}
+            <AnimatePresence mode="popLayout">
+                {showDragHandle && (
+                    <motion.div
+                        initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                        animate={{ width: 24, opacity: 1, marginLeft: 8 }}
+                        exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        className="shrink-0 cursor-grab active:cursor-grabbing flex items-center justify-center overflow-hidden"
+                    >
+                        <Menu className="w-5 h-5 text-white/40" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }
 
@@ -723,7 +695,7 @@ export function LocationListModal({
         }
     }, [isOpen]);
 
-    // Handle reorder with proper index tracking
+    // Handle reorder - Framer Motion's Reorder gives us the new order directly
     const handleReorder = useCallback((newOrder: LocationWeather[]) => {
         // Don't allow moving "My Location" from the top
         const myLocationIndex = newOrder.findIndex(l => l.isMyLocation);
@@ -733,31 +705,21 @@ export function LocationListModal({
             newOrder.unshift(myLoc);
         }
         
-        setOrderedLocations(newOrder);
+        // Update local state immediately for smooth UI
+        setOrderedLocations([...newOrder]);
         
-        // Find the item that moved by comparing old and new orders
+        // Persist the new order to parent
+        // We need to find what moved by comparing orders
         const oldIds = orderedLocations.map(l => l.location.id);
         const newIds = newOrder.map(l => l.location.id);
         
-        // Find first difference
-        let fromIndex = -1;
-        let toIndex = -1;
-        
-        for (let i = 0; i < oldIds.length; i++) {
-            if (oldIds[i] !== newIds[i]) {
-                // Find where the old item went
-                const movedId = oldIds[i];
-                const newPosition = newIds.indexOf(movedId);
-                if (newPosition !== -1 && !orderedLocations[i].isMyLocation) {
-                    fromIndex = i;
-                    toIndex = newPosition;
-                    break;
-                }
+        // Find the item that moved
+        for (let i = 0; i < newIds.length; i++) {
+            const oldIndex = oldIds.indexOf(newIds[i]);
+            if (oldIndex !== i && oldIndex !== -1 && !orderedLocations[oldIndex].isMyLocation) {
+                onReorderLocations(oldIndex, i);
+                return;
             }
-        }
-        
-        if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-            onReorderLocations(fromIndex, toIndex);
         }
     }, [orderedLocations, onReorderLocations]);
 
@@ -829,23 +791,50 @@ export function LocationListModal({
                                         values={orderedLocations}
                                         onReorder={handleReorder}
                                         className="space-y-2"
-                                        layoutScroll
                                     >
-                                        {orderedLocations.map((loc, index) => (
-                                            <DraggableLocationItem
-                                                key={`draggable-${loc.location.id}`}
-                                                loc={loc}
-                                                index={index}
-                                                currentIndex={currentIndex}
-                                                isEditMode={isEditMode}
-                                                onSelect={() => {
-                                                    onSelectLocation(index);
-                                                    onClose();
-                                                }}
-                                                onRemove={() => onRemoveLocation(loc.location.id)}
-                                                settings={settings}
-                                            />
-                                        ))}
+                                        {orderedLocations.map((loc, index) => {
+                                            const canDrag = isEditMode && !loc.isMyLocation;
+                                            
+                                            return (
+                                                <Reorder.Item
+                                                    key={loc.location.id}
+                                                    value={loc}
+                                                    drag={canDrag ? 'y' : false}
+                                                    dragElastic={0.1}
+                                                    whileDrag={{ 
+                                                        scale: 1.02,
+                                                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                                                        zIndex: 50,
+                                                    }}
+                                                    layout
+                                                    transition={{
+                                                        layout: {
+                                                            type: 'spring',
+                                                            stiffness: 500,
+                                                            damping: 35,
+                                                        },
+                                                    }}
+                                                    style={{ 
+                                                        position: 'relative',
+                                                        zIndex: 1,
+                                                    }}
+                                                >
+                                                    <LocationCardContent
+                                                        loc={loc}
+                                                        index={index}
+                                                        currentIndex={currentIndex}
+                                                        isEditMode={isEditMode}
+                                                        onSelect={() => {
+                                                            onSelectLocation(index);
+                                                            onClose();
+                                                        }}
+                                                        onRemove={() => onRemoveLocation(loc.location.id)}
+                                                        settings={settings}
+                                                        showDragHandle={canDrag}
+                                                    />
+                                                </Reorder.Item>
+                                            );
+                                        })}
                                     </Reorder.Group>
                                 )}
 
