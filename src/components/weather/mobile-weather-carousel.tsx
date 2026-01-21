@@ -611,24 +611,32 @@ export function LocationListModal({
                                             draggedIndex === index && 'shadow-2xl'
                                         )}
                                     >
-                                        <motion.button
+                                        <motion.div
+                                            role="button"
+                                            tabIndex={isEditMode ? -1 : 0}
                                             onClick={() => {
                                                 if (!isEditMode) {
                                                     onSelectLocation(index);
                                                     onClose();
                                                 }
                                             }}
+                                            onKeyDown={(e) => {
+                                                if (!isEditMode && (e.key === 'Enter' || e.key === ' ')) {
+                                                    onSelectLocation(index);
+                                                    onClose();
+                                                }
+                                            }}
                                             onPan={(_, info) => !isEditMode && handleSwipe(index, info)}
                                             className={cn(
-                                                'w-full p-4 text-left transition-all',
+                                                'w-full p-4 text-left transition-all cursor-pointer',
                                                 'bg-linear-to-br',
                                                 index === currentIndex && !isEditMode
                                                     ? 'from-blue-500/40 to-purple-500/40 ring-2 ring-white/30'
                                                     : 'from-slate-800/80 to-slate-700/80',
-                                                !isEditMode && 'hover:from-slate-700/80 hover:to-slate-600/80'
+                                                !isEditMode && 'hover:from-slate-700/80 hover:to-slate-600/80',
+                                                isEditMode && 'cursor-default'
                                             )}
                                             whileTap={!isEditMode ? { scale: 0.98 } : undefined}
-                                            disabled={isEditMode}
                                         >
                                             <div className="flex items-start justify-between">
                                                 {/* Drag handle in edit mode */}
@@ -697,7 +705,7 @@ export function LocationListModal({
                                                     </button>
                                                 )}
                                             </div>
-                                        </motion.button>
+                                        </motion.div>
                                     </motion.div>
                                 </div>
                             ))}

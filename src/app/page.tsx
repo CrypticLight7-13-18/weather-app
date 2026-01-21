@@ -55,7 +55,10 @@ export default function HomePage() {
   const [refreshStatus, setRefreshStatus] = useState<RefreshStatus>('idle');
   const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
   const [mobileLocations, setMobileLocations] = useState<LocationWeatherState[]>([]);
+  const [mobileSavedLocations, setMobileSavedLocations] = useState<Location[]>([]);
   const [myLocation, setMyLocation] = useState<Location | null>(null);
+  const [hasValidGeolocation, setHasValidGeolocation] = useState(false);
+  const [mobileLocationsLoaded, setMobileLocationsLoaded] = useState(false);
   const locationToastId = useRef<string | null>(null);
 
   // Check if mobile/tablet
@@ -69,15 +72,48 @@ export default function HomePage() {
   const { settings, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
   const toast = useToast();
-  const appFavorites = useAppStore((state) => state.favorites);
 
-  // Build mobile locations array from my location + favorites
+  // Load mobile saved locations from localStorage on mount
   useEffect(() => {
-    const buildMobileLocations = async () => {
+    if (!isMobileOrTablet) return;
+    
+    // Use setTimeout to avoid synchronous setState in effect
+    const timer = setTimeout(() => {
+      try {
+        const saved = localStorage.getItem('weather-mobile-locations');
+        if (saved) {
+          const parsed = JSON.parse(saved) as Location[];
+          setMobileSavedLocations(parsed);
+        }
+      } catch {
+        // Invalid data, ignore
+      }
+      setMobileLocationsLoaded(true);
+    }, 0);
+    
+    return () => clearTimeout(timer);
+  }, [isMobileOrTablet]);
+
+  // Save mobile locations to localStorage when they change
+  useEffect(() => {
+    if (!isMobileOrTablet || !mobileLocationsLoaded) return;
+    
+    try {
+      localStorage.setItem('weather-mobile-locations', JSON.stringify(mobileSavedLocations));
+    } catch {
+      // Storage error, ignore
+    }
+  }, [mobileSavedLocations, isMobileOrTablet, mobileLocationsLoaded]);
+
+  // Build mobile locations array from my location + saved mobile locations
+  useEffect(() => {
+    if (!isMobileOrTablet || !mobileLocationsLoaded) return;
+    
+    const buildMobileLocations = () => {
       const locations: LocationWeatherState[] = [];
 
-      // Add "My Location" first if available
-      if (myLocation) {
+      // Add "My Location" ONLY if we have valid geolocation
+      if (myLocation && hasValidGeolocation) {
         const existingMyLoc = mobileLocations.find(l => l.isMyLocation);
         locations.push({
           location: myLocation,
@@ -88,15 +124,20 @@ export default function HomePage() {
         });
       }
 
-      // Add favorites (exclude if same location as "My Location" to avoid duplicates)
-      for (const fav of appFavorites) {
-        // Skip if this favorite is the same as "My Location"
-        if (myLocation && fav.id === myLocation.id) {
-          continue;
+      // Add saved mobile locations (exclude if same as "My Location")
+      for (const savedLoc of mobileSavedLocations) {
+        // Skip if this location is the same as "My Location"
+        if (myLocation && hasValidGeolocation) {
+          const latDiff = Math.abs(savedLoc.latitude - myLocation.latitude);
+          const lonDiff = Math.abs(savedLoc.longitude - myLocation.longitude);
+          if (latDiff < 0.01 && lonDiff < 0.01) {
+            continue;
+          }
         }
-        const existing = mobileLocations.find(l => l.location.id === fav.id && !l.isMyLocation);
+        
+        const existing = mobileLocations.find(l => l.location.id === savedLoc.id && !l.isMyLocation);
         locations.push({
-          location: fav,
+          location: savedLoc,
           weather: existing?.weather || null,
           isLoading: existing?.isLoading ?? true,
           error: existing?.error || null,
@@ -107,11 +148,9 @@ export default function HomePage() {
       setMobileLocations(locations);
     };
 
-    if (isMobileOrTablet) {
-      buildMobileLocations();
-    }
-    // Note: mobileLocations is intentionally excluded to preserve weather data when favorites change
-  }, [myLocation, appFavorites, isMobileOrTablet]); // eslint-disable-line react-hooks/exhaustive-deps
+    buildMobileLocations();
+    // Note: mobileLocations is intentionally excluded to preserve weather data
+  }, [myLocation, hasValidGeolocation, mobileSavedLocations, isMobileOrTablet, mobileLocationsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch weather for mobile locations - triggered when locations change
   useEffect(() => {
@@ -155,52 +194,69 @@ export default function HomePage() {
   // Auto-detect location on first load
   useEffect(() => {
     const initLocation = async () => {
-      // Check if we have a stored location
-      const storedLocation = localStorage.getItem('weather-last-location');
-      if (storedLocation) {
-        try {
-          const parsed = JSON.parse(storedLocation);
-          loadWeather(parsed);
-          setMyLocation(parsed);
-          setIsInitialized(true);
-          return;
-        } catch {
-          // Invalid stored data, continue to geolocation
+      // For desktop: Check if we have a stored location for initial display
+      if (!isMobileOrTablet) {
+        const storedLocation = localStorage.getItem('weather-last-location');
+        if (storedLocation) {
+          try {
+            const parsed = JSON.parse(storedLocation);
+            loadWeather(parsed);
+            // Don't set as "My Location" - it's just the last viewed location
+            setIsInitialized(true);
+            // Still try geolocation in background for future use
+          } catch {
+            // Invalid stored data, continue to geolocation
+          }
         }
       }
 
-      // Try to get user's location
+      // Try to get user's actual location via geolocation
       setLocationStatus('detecting');
-      const toastId = toast.loading('Detecting location...', 'Please wait');
-      locationToastId.current = toastId;
+      
+      // Only show toast if we don't have any stored location
+      const hasStoredDesktop = !isMobileOrTablet && localStorage.getItem('weather-last-location');
+      const toastId = hasStoredDesktop ? null : toast.loading('Detecting location...', 'Please wait');
+      if (toastId) locationToastId.current = toastId;
 
       const position = await getCurrentPosition();
       
       if (position) {
-        setLocationStatus('geocoding');
-        toast.update(toastId, { message: 'Finding your city...' });
+        if (toastId) {
+          setLocationStatus('geocoding');
+          toast.update(toastId, { message: 'Finding your city...' });
+        }
         
         const loc = await reverseGeocode(position.latitude, position.longitude);
         if (loc) {
           loadWeather(loc);
           setMyLocation(loc);
+          setHasValidGeolocation(true);
           localStorage.setItem('weather-last-location', JSON.stringify(loc));
+          localStorage.setItem('weather-my-location', JSON.stringify(loc)); // Separate key for geolocation
           setLocationStatus('success');
-          toast.update(toastId, { 
-            type: 'success', 
-            message: 'Location found',
-            description: loc.displayName 
-          });
+          if (toastId) {
+            toast.update(toastId, { 
+              type: 'success', 
+              message: 'Location found',
+              description: loc.displayName 
+            });
+          }
         } else {
           setLocationStatus('error');
-          toast.update(toastId, { 
-            type: 'error', 
-            message: 'Could not find city',
-            description: 'Try searching manually' 
-          });
+          setHasValidGeolocation(false);
+          if (toastId) {
+            toast.update(toastId, { 
+              type: 'error', 
+              message: 'Could not find city',
+              description: 'Try searching manually' 
+            });
+          }
         }
       } else {
         setLocationStatus('error');
+        setHasValidGeolocation(false);
+        
+        // Show error notification
         const errorMessages: Record<string, { message: string; description: string }> = {
           PERMISSION_DENIED: { 
             message: 'Location access denied', 
@@ -223,11 +279,16 @@ export default function HomePage() {
           ? errorMessages[geoErrorType] 
           : { message: 'Location failed', description: 'Please search for a city' };
         
-        toast.update(toastId, { 
-          type: 'error', 
-          message: errInfo.message,
-          description: errInfo.description 
-        });
+        if (toastId) {
+          toast.update(toastId, { 
+            type: 'error', 
+            message: errInfo.message,
+            description: errInfo.description 
+          });
+        } else if (isMobileOrTablet) {
+          // On mobile, always show error if geolocation fails
+          toast.error(errInfo.message, errInfo.description);
+        }
       }
       
       setIsInitialized(true);
@@ -274,54 +335,57 @@ export default function HomePage() {
 
       // For mobile, add the location if it doesn't exist
       if (isMobileOrTablet) {
-        // Check for existing location by ID or similar coordinates (within ~1km)
+        // Check for existing location by coordinates (within ~1km)
         const existingIndex = mobileLocations.findIndex(l => {
-          if (l.location.id === loc.id) return true;
-          // Also check for very close coordinates (same location, different search result)
           const latDiff = Math.abs(l.location.latitude - loc.latitude);
           const lonDiff = Math.abs(l.location.longitude - loc.longitude);
-          return latDiff < 0.01 && lonDiff < 0.01; // ~1km tolerance
+          return latDiff < 0.01 && lonDiff < 0.01;
         });
         
         if (existingIndex >= 0) {
           // Location exists, navigate to it
           setCurrentMobileIndex(existingIndex);
         } else {
-          // Add new location to the list with loading state
+          // Generate a unique ID for persistence
+          const uniqueId = `${loc.id}-${Date.now()}`;
+          const newLocation: Location = { ...loc, id: uniqueId };
+          
+          // Add to saved locations for persistence
+          setMobileSavedLocations(prev => {
+            // Check if already saved (by coordinates)
+            const alreadyExists = prev.some(l => {
+              const latDiff = Math.abs(l.latitude - loc.latitude);
+              const lonDiff = Math.abs(l.longitude - loc.longitude);
+              return latDiff < 0.01 && lonDiff < 0.01;
+            });
+            if (alreadyExists) return prev;
+            return [newLocation, ...prev];
+          });
+          
+          // Add to display list immediately with loading state
           const hasMyLocation = mobileLocations.some(l => l.isMyLocation);
           const newIndex = hasMyLocation ? 1 : 0;
           
-          // Generate a unique ID for this session to avoid key conflicts
-          const uniqueId = `${loc.id}-${Date.now()}`;
-          
           setMobileLocations(prev => {
-            // Double-check no duplicate exists
-            const alreadyExists = prev.some(l => l.location.id === loc.id);
-            if (alreadyExists) {
-              return prev;
-            }
-            
-            const newLocation: LocationWeatherState = {
-              location: { ...loc, id: uniqueId },
+            const newLocationState: LocationWeatherState = {
+              location: newLocation,
               weather: null,
               isLoading: true,
               error: null,
               isMyLocation: false,
             };
-            // Add after "My Location" if it exists, otherwise at the start
             const myLocIndex = prev.findIndex(l => l.isMyLocation);
             if (myLocIndex >= 0) {
               const newList = [...prev];
-              newList.splice(myLocIndex + 1, 0, newLocation);
+              newList.splice(myLocIndex + 1, 0, newLocationState);
               return newList;
             }
-            return [newLocation, ...prev];
+            return [newLocationState, ...prev];
           });
           
-          // Navigate to the new location
           setCurrentMobileIndex(newIndex);
 
-          // Immediately fetch weather for the new location
+          // Fetch weather for the new location
           try {
             const weatherData = await fetchWeatherData({
               latitude: loc.latitude,
@@ -361,6 +425,8 @@ export default function HomePage() {
       if (loc) {
         loadWeather(loc);
         setMyLocation(loc);
+        setHasValidGeolocation(true);
+        localStorage.setItem('weather-my-location', JSON.stringify(loc));
         setLocationStatus('success');
         toast.update(toastId, { 
           type: 'success', 
@@ -368,12 +434,13 @@ export default function HomePage() {
           description: loc.displayName 
         });
 
-        // Update mobile locations
+        // Update mobile locations - add or update "My Location"
         if (isMobileOrTablet) {
           setMobileLocations(prev => {
-            const updated = [...prev];
-            const myLocIndex = updated.findIndex(l => l.isMyLocation);
+            const myLocIndex = prev.findIndex(l => l.isMyLocation);
             if (myLocIndex >= 0) {
+              // Update existing
+              const updated = [...prev];
               updated[myLocIndex] = {
                 ...updated[myLocIndex],
                 location: loc,
@@ -381,8 +448,17 @@ export default function HomePage() {
                 isLoading: true,
                 error: null,
               };
+              return updated;
+            } else {
+              // Add new "My Location" at start
+              return [{
+                location: loc,
+                weather: null,
+                isLoading: true,
+                error: null,
+                isMyLocation: true,
+              }, ...prev];
             }
-            return updated;
           });
           setCurrentMobileIndex(0);
         }
@@ -478,6 +554,18 @@ export default function HomePage() {
   }, [weather, refresh, toast, isMobileOrTablet, mobileLocations, currentMobileIndex]);
 
   const handleRemoveMobileLocation = useCallback((locationId: string) => {
+    // Find the location to get its coordinates for matching
+    const locationToRemove = mobileLocations.find(l => l.location.id === locationId && !l.isMyLocation);
+    if (!locationToRemove) return;
+    
+    // Remove from saved locations (match by coordinates for robustness)
+    setMobileSavedLocations(prev => prev.filter(l => {
+      const latDiff = Math.abs(l.latitude - locationToRemove.location.latitude);
+      const lonDiff = Math.abs(l.longitude - locationToRemove.location.longitude);
+      return latDiff >= 0.01 || lonDiff >= 0.01; // Keep if coordinates differ
+    }));
+    
+    // Remove from display list
     setMobileLocations(prev => {
       const index = prev.findIndex(l => l.location.id === locationId && !l.isMyLocation);
       if (index === -1) return prev;
@@ -493,16 +581,21 @@ export default function HomePage() {
       
       return newList;
     });
-    // Also remove from favorites
-    useAppStore.getState().removeFavorite(locationId);
+    
     toast.success('Location removed');
-  }, [currentMobileIndex, toast]);
+  }, [currentMobileIndex, toast, mobileLocations]);
 
   const handleReorderMobileLocations = useCallback((fromIndex: number, toIndex: number) => {
     setMobileLocations(prev => {
       const newList = [...prev];
       const [removed] = newList.splice(fromIndex, 1);
       newList.splice(toIndex, 0, removed);
+      
+      // Update saved locations order (excluding My Location)
+      const savedOrder = newList
+        .filter(l => !l.isMyLocation)
+        .map(l => l.location);
+      setMobileSavedLocations(savedOrder);
       
       // Adjust current index to follow the moved item if it was selected
       if (currentMobileIndex === fromIndex) {
