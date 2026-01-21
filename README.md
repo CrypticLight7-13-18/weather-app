@@ -44,7 +44,7 @@ A production-grade weather application built with Next.js 14+, featuring beautif
 - **APIs**: Open-Meteo (weather), Nominatim (geocoding)
 - **Icons**: Lucide React + Custom animated SVGs
 - **Date Utilities**: date-fns
-- **Testing**: Vitest, MSW, Testing Library
+- **Testing**: Vitest, MSW, Playwright (E2E), Testing Library
 
 ## Project Structure
 
@@ -236,7 +236,10 @@ const location = await reverseGeocode(40.7128, -74.006);
 
 ## Testing
 
-The application includes a comprehensive dual-layer testing strategy: **unit tests** with mocked APIs for fast, deterministic testing, and **integration tests** that verify real API behavior.
+The application includes a comprehensive three-layer testing strategy:
+- **Unit tests** (Vitest + MSW) - Fast, deterministic tests with mocked APIs
+- **Integration tests** (UI Test Runner) - Real API verification
+- **E2E tests** (Playwright) - Full browser automation for user flows
 
 ### Why Two Test Suites?
 
@@ -610,6 +613,195 @@ export default defineConfig({
   "test:ui": "vitest --ui",       // Browser-based test UI
   "test:coverage": "vitest run --coverage"  // With coverage report
 }
+```
+
+---
+
+### E2E Tests (Playwright)
+
+End-to-end tests verify the application works correctly from a user's perspective by automating browser interactions. These tests run against a real browser (Chromium) and cover complete user journeys.
+
+#### Why E2E Tests?
+
+| Aspect | Unit Tests | Integration Tests | E2E Tests |
+|--------|------------|-------------------|-----------|
+| **Scope** | Single function | API contracts | Full user flows |
+| **Speed** | ~1 second | ~10 seconds | ~30-60 seconds |
+| **Browser** | No (Node.js) | No (fetch only) | Yes (real browser) |
+| **User Simulation** | None | Partial | Complete |
+| **Visual Verification** | None | None | Screenshots/Video |
+| **Test Count** | 69 | 16 | 50+ |
+
+#### Running E2E Tests
+
+```bash
+# Run all E2E tests (headless)
+npm run e2e
+
+# Run with visual UI (recommended for debugging)
+npm run e2e:ui
+
+# Run tests in headed browser (see the browser)
+npm run e2e:headed
+
+# Debug mode - step through tests
+npm run e2e:debug
+
+# View test report from last run
+npm run e2e:report
+```
+
+#### E2E Test File Structure
+
+```
+e2e/
+├── home.spec.ts           # Home page tests (8 tests)
+├── search.spec.ts         # Location search tests (9 tests)
+├── settings.spec.ts       # Settings panel tests (11 tests)
+├── favorites.spec.ts      # Favorites functionality (6 tests)
+├── weather-display.spec.ts # Weather data display (15 tests)
+├── navigation.spec.ts     # Page navigation tests (9 tests)
+├── history.spec.ts        # Browsing history tests (5 tests)
+└── world-clock.spec.ts    # World clock tests (8 tests)
+```
+
+#### Test Categories & Coverage
+
+**Home Page (`home.spec.ts`)**
+- Page load and initial state
+- Header with logo and controls
+- Theme toggle functionality
+- Responsive design (mobile viewport)
+- Accessibility (keyboard navigation, focus)
+
+**Search (`search.spec.ts`)**
+- Opening search dialog
+- Searching for locations
+- Selecting search results
+- Keyboard navigation (Escape, arrows)
+- Empty/invalid search handling
+
+**Settings (`settings.spec.ts`)**
+- Opening settings panel
+- Temperature unit toggle (°C/°F)
+- Wind speed units (km/h, mph, m/s, kn)
+- Pressure units (hPa, inHg, mmHg)
+- Theme selection
+- Settings persistence after reload
+
+**Favorites (`favorites.spec.ts`)**
+- Adding locations to favorites
+- Removing favorites
+- Empty state display
+- Favorites persistence
+- Quick access to favorited locations
+
+**Weather Display (`weather-display.spec.ts`)**
+- Current weather card
+- Temperature display
+- Weather icons
+- Hourly forecast (scroll, "Now" indicator)
+- Daily forecast (day names, temps)
+- Weather details (humidity, wind, UV, pressure)
+
+**Navigation (`navigation.spec.ts`)**
+- Navigate to /docs
+- Navigate to /tests
+- Settings popover navigation links
+- Browser back/forward
+- Page transitions
+
+**History (`history.spec.ts`)**
+- History section display
+- Recording viewed locations
+- History persistence
+- Clicking history items
+- History size limits
+
+**World Clock (`world-clock.spec.ts`)**
+- World clock display
+- User's local time
+- Adding cities
+- Removing cities
+- Clock time updates
+- Persistence
+
+#### Playwright Configuration
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  retries: process.env.CI ? 2 : 0,
+  reporter: [['html'], ['list']],
+  
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'on-first-retry',
+  },
+
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+#### Writing New E2E Tests
+
+```typescript
+// e2e/example.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Feature Name', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(1000); // Wait for hydration
+  });
+
+  test('should do something', async ({ page }) => {
+    // Find element
+    const button = page.getByRole('button', { name: /search/i });
+    
+    // Interact
+    await button.click();
+    
+    // Assert
+    await expect(page.locator('[role="dialog"]')).toBeVisible();
+  });
+});
+```
+
+#### Debugging Failed Tests
+
+When a test fails, Playwright provides:
+- **Screenshots** - Captured at failure point
+- **Videos** - Full test recording (on retry)
+- **Traces** - Step-by-step timeline with DOM snapshots
+
+To view:
+```bash
+npm run e2e:report
+```
+
+This opens an HTML report with all artifacts.
+
+#### CI/CD Integration
+
+For continuous integration:
+```yaml
+# Example GitHub Actions
+- name: Install Playwright
+  run: npx playwright install --with-deps chromium
+
+- name: Run E2E tests
+  run: npm run e2e
+  env:
+    CI: true
 ```
 
 ---

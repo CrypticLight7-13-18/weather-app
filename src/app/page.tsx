@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeather, useHistoricalWeather, useGeolocation, useFavorites } from '@/hooks';
 import { useAppStore, useWeatherStore } from '@/stores';
 import { reverseGeocode } from '@/lib/api';
@@ -28,19 +28,29 @@ import {
   SkeletonDailyForecast,
   SkeletonChart,
   Card,
+  ToastContainer,
+  useToast,
 } from '@/components/ui';
+
+// Status types for better state management
+type LocationStatus = 'idle' | 'detecting' | 'geocoding' | 'success' | 'error';
+type RefreshStatus = 'idle' | 'refreshing' | 'success' | 'error';
 
 export default function HomePage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [refreshStatus, setRefreshStatus] = useState<RefreshStatus>('idle');
+  const locationToastId = useRef<string | null>(null);
 
   // Hooks
   const { weather, location, error, isLoading, loadWeather, refresh } = useWeather();
   const { data: historicalData, status: historicalStatus } = useHistoricalWeather();
-  const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
+  const { getCurrentPosition, error: geoError, errorType: geoErrorType } = useGeolocation();
   useFavorites(); // Initialize favorites hook for prefetching
   const { settings, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
+  const toast = useToast();
 
   // Auto-detect location on first load
   useEffect(() => {
@@ -59,15 +69,68 @@ export default function HomePage() {
       }
 
       // Try to get user's location
+      setLocationStatus('detecting');
+      const toastId = toast.loading('Detecting location...', 'Please wait');
+      locationToastId.current = toastId;
+
       const position = await getCurrentPosition();
+      
       if (position) {
+        setLocationStatus('geocoding');
+        toast.update(toastId, { message: 'Finding your city...' });
+        
         const loc = await reverseGeocode(position.latitude, position.longitude);
         if (loc) {
           loadWeather(loc);
           localStorage.setItem('weather-last-location', JSON.stringify(loc));
+          setLocationStatus('success');
+          toast.update(toastId, { 
+            type: 'success', 
+            message: 'Location found',
+            description: loc.displayName 
+          });
+        } else {
+          setLocationStatus('error');
+          toast.update(toastId, { 
+            type: 'error', 
+            message: 'Could not find city',
+            description: 'Try searching manually' 
+          });
         }
+      } else {
+        setLocationStatus('error');
+        // Show appropriate error message based on error type
+        const errorMessages: Record<string, { message: string; description: string }> = {
+          PERMISSION_DENIED: { 
+            message: 'Location access denied', 
+            description: 'Enable in browser settings or search manually' 
+          },
+          POSITION_UNAVAILABLE: { 
+            message: 'Location unavailable', 
+            description: 'Try again or search for a city' 
+          },
+          TIMEOUT: { 
+            message: 'Location timed out', 
+            description: 'Check connection and try again' 
+          },
+          NOT_SUPPORTED: { 
+            message: 'Location not supported', 
+            description: 'Please search for a city' 
+          },
+        };
+        const errInfo = geoErrorType 
+          ? errorMessages[geoErrorType] 
+          : { message: 'Location failed', description: 'Please search for a city' };
+        
+        toast.update(toastId, { 
+          type: 'error', 
+          message: errInfo.message,
+          description: errInfo.description 
+        });
       }
+      
       setIsInitialized(true);
+      locationToastId.current = null;
     };
 
     initLocation();
@@ -108,24 +171,109 @@ export default function HomePage() {
     (loc: Location) => {
       loadWeather(loc);
       setIsSearchOpen(false);
+      toast.success('Location updated', loc.displayName);
     },
-    [loadWeather]
+    [loadWeather, toast]
   );
 
   const handleDetectLocation = useCallback(async () => {
+    setLocationStatus('detecting');
+    const toastId = toast.loading('Detecting location...', 'Please wait');
+    
     const position = await getCurrentPosition();
+    
     if (position) {
+      setLocationStatus('geocoding');
+      toast.update(toastId, { message: 'Finding your city...' });
+      
       const loc = await reverseGeocode(position.latitude, position.longitude);
       if (loc) {
         loadWeather(loc);
+        setLocationStatus('success');
+        toast.update(toastId, { 
+          type: 'success', 
+          message: 'Location updated',
+          description: loc.displayName 
+        });
+      } else {
+        setLocationStatus('error');
+        toast.update(toastId, { 
+          type: 'error', 
+          message: 'Could not find city',
+          description: 'Try searching manually' 
+        });
       }
+    } else {
+      setLocationStatus('error');
+      // Determine error type
+      const errorMessages: Record<string, { message: string; description: string }> = {
+        PERMISSION_DENIED: { 
+          message: 'Location access denied', 
+          description: 'Enable in browser settings' 
+        },
+        POSITION_UNAVAILABLE: { 
+          message: 'Location unavailable', 
+          description: 'Try again later' 
+        },
+        TIMEOUT: { 
+          message: 'Request timed out', 
+          description: 'Check your connection' 
+        },
+        NOT_SUPPORTED: { 
+          message: 'Not supported', 
+          description: 'Search for a city instead' 
+        },
+      };
+      const errInfo = geoErrorType 
+        ? errorMessages[geoErrorType] 
+        : { message: 'Detection failed', description: 'Try searching' };
+      
+      toast.update(toastId, { 
+        type: 'error', 
+        message: errInfo.message,
+        description: errInfo.description 
+      });
     }
-  }, [getCurrentPosition, loadWeather]);
+    
+    // Reset status after a delay
+    setTimeout(() => setLocationStatus('idle'), 2000);
+  }, [getCurrentPosition, loadWeather, toast, geoErrorType]);
+
+  const handleRefresh = useCallback(async () => {
+    if (!weather) return;
+    
+    setRefreshStatus('refreshing');
+    const toastId = toast.loading('Refreshing...', 'Fetching latest data');
+    
+    try {
+      await refresh();
+      setRefreshStatus('success');
+      toast.update(toastId, { 
+        type: 'success', 
+        message: 'Updated',
+        description: 'Weather data refreshed' 
+      });
+    } catch {
+      setRefreshStatus('error');
+      toast.update(toastId, { 
+        type: 'error', 
+        message: 'Refresh failed',
+        description: 'Please try again' 
+      });
+    }
+    
+    // Reset status after a delay
+    setTimeout(() => setRefreshStatus('idle'), 2000);
+  }, [weather, refresh, toast]);
 
   const showLoading = !isInitialized || (isLoading && !weather);
   const showError = error && !weather;
   const showEmpty = isInitialized && !weather && !isLoading && !error;
   const showContent = weather && location;
+
+  // Determine if we're in any loading state
+  const isDetectingLocation = locationStatus === 'detecting' || locationStatus === 'geocoding';
+  const isRefreshing = refreshStatus === 'refreshing' || (isLoading && !!weather);
 
   return (
     <div className={cn(
@@ -133,6 +281,9 @@ export default function HomePage() {
       // Neumorphic background - clean, soft gray that matches shadows
       'bg-[#e8eef5] dark:bg-slate-900'
     )}>
+      {/* Toast notifications */}
+      <ToastContainer />
+
       {/* Subtle ambient lighting effect */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-white/30 dark:bg-slate-800/20 blur-[120px]" />
@@ -142,10 +293,12 @@ export default function HomePage() {
       <div className="relative z-10">
       <Header
         onSearchClick={() => setIsSearchOpen(true)}
-        onRefresh={refresh}
+        onRefresh={handleRefresh}
         onDetectLocation={handleDetectLocation}
-        isRefreshing={isLoading && !!weather}
-        isDetectingLocation={geoLoading}
+        isRefreshing={isRefreshing}
+        isDetectingLocation={isDetectingLocation}
+        locationStatus={locationStatus}
+        refreshStatus={refreshStatus}
       />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
@@ -175,6 +328,10 @@ export default function HomePage() {
               action={{
                 label: 'Search for a location',
                 onClick: () => setIsSearchOpen(true),
+              }}
+              secondaryAction={{
+                label: 'Detect my location',
+                onClick: handleDetectLocation,
               }}
             />
           </div>

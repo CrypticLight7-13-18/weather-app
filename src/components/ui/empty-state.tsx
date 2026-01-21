@@ -15,6 +15,10 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
   className?: string;
 }
 
@@ -52,6 +56,7 @@ export function EmptyState({
   description,
   icon,
   action,
+  secondaryAction,
   className,
 }: EmptyStateProps) {
   const config = VARIANTS[variant];
@@ -81,10 +86,19 @@ export function EmptyState({
       <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
         {displayDescription}
       </p>
-      {action && (
-        <Button onClick={action.onClick} variant="secondary">
-          {action.label}
-        </Button>
+      {(action || secondaryAction) && (
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {action && (
+            <Button onClick={action.onClick} variant="secondary">
+              {action.label}
+            </Button>
+          )}
+          {secondaryAction && (
+            <Button onClick={secondaryAction.onClick} variant="ghost">
+              {secondaryAction.label}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

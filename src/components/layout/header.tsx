@@ -11,12 +11,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/ui/toggle';
 import { TemperatureUnit, WindSpeedUnit, PressureUnit, PrecipitationUnit, Theme } from '@/types';
 
+type LocationStatus = 'idle' | 'detecting' | 'geocoding' | 'success' | 'error';
+type RefreshStatus = 'idle' | 'refreshing' | 'success' | 'error';
+
 interface HeaderProps {
   onSearchClick: () => void;
   onRefresh: () => void;
   onDetectLocation: () => void;
   isRefreshing?: boolean;
   isDetectingLocation?: boolean;
+  locationStatus?: LocationStatus;
+  refreshStatus?: RefreshStatus;
   className?: string;
 }
 
@@ -26,6 +31,8 @@ export function Header({
   onDetectLocation,
   isRefreshing,
   isDetectingLocation,
+  locationStatus = 'idle',
+  refreshStatus = 'idle',
   className,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
@@ -177,32 +184,82 @@ export function Header({
 
         {/* Actions */}
         <div className="flex items-center gap-1">
-          <IconButton
-            label="Detect my location"
-            onClick={onDetectLocation}
-            disabled={isDetectingLocation}
-            className={cn(
-              isDetectingLocation && 'animate-pulse',
-              'hover:bg-slate-100 dark:hover:bg-slate-800'
+          {/* Location button with status indicator */}
+          <div className="relative">
+            <IconButton
+              label={
+                locationStatus === 'detecting' ? 'Detecting...' :
+                locationStatus === 'geocoding' ? 'Finding city...' :
+                locationStatus === 'success' ? 'Location found!' :
+                locationStatus === 'error' ? 'Detection failed' :
+                'Detect my location'
+              }
+              onClick={onDetectLocation}
+              disabled={isDetectingLocation}
+              className={cn(
+                'hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200',
+                locationStatus === 'success' && 'bg-emerald-50 dark:bg-emerald-900/20',
+                locationStatus === 'error' && 'bg-red-50 dark:bg-red-900/20'
+              )}
+            >
+              <MapPin className={cn(
+                'h-5 w-5 transition-colors duration-200',
+                isDetectingLocation ? 'text-blue-500 animate-pulse' : 
+                locationStatus === 'success' ? 'text-emerald-500' :
+                locationStatus === 'error' ? 'text-red-500' :
+                'text-slate-500 dark:text-slate-400'
+              )} />
+            </IconButton>
+            {/* Status dot indicator */}
+            {locationStatus !== 'idle' && (
+              <span className={cn(
+                'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900',
+                locationStatus === 'detecting' || locationStatus === 'geocoding' 
+                  ? 'bg-blue-500 animate-pulse' 
+                  : locationStatus === 'success' 
+                    ? 'bg-emerald-500' 
+                    : 'bg-red-500'
+              )} />
             )}
-          >
-            <MapPin className={cn(
-              'h-5 w-5',
-              isDetectingLocation ? 'text-blue-500' : 'text-slate-500 dark:text-slate-400'
-            )} />
-          </IconButton>
+          </div>
           
-          <IconButton
-            label="Refresh weather"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <RefreshCw className={cn(
-              'h-5 w-5 text-slate-500 dark:text-slate-400',
-              isRefreshing && 'animate-spin'
-            )} />
-          </IconButton>
+          {/* Refresh button with status indicator */}
+          <div className="relative">
+            <IconButton
+              label={
+                refreshStatus === 'refreshing' ? 'Refreshing...' :
+                refreshStatus === 'success' ? 'Updated!' :
+                refreshStatus === 'error' ? 'Refresh failed' :
+                'Refresh weather'
+              }
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className={cn(
+                'hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200',
+                refreshStatus === 'success' && 'bg-emerald-50 dark:bg-emerald-900/20',
+                refreshStatus === 'error' && 'bg-red-50 dark:bg-red-900/20'
+              )}
+            >
+              <RefreshCw className={cn(
+                'h-5 w-5 transition-colors duration-200',
+                isRefreshing ? 'text-blue-500 animate-spin' :
+                refreshStatus === 'success' ? 'text-emerald-500' :
+                refreshStatus === 'error' ? 'text-red-500' :
+                'text-slate-500 dark:text-slate-400'
+              )} />
+            </IconButton>
+            {/* Status dot indicator */}
+            {refreshStatus !== 'idle' && (
+              <span className={cn(
+                'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900',
+                refreshStatus === 'refreshing' 
+                  ? 'bg-blue-500 animate-pulse' 
+                  : refreshStatus === 'success' 
+                    ? 'bg-emerald-500' 
+                    : 'bg-red-500'
+              )} />
+            )}
+          </div>
           
           <IconButton
             label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}

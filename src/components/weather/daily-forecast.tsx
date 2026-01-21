@@ -119,7 +119,7 @@ function DailyItem({
         isToday
           ? cn(
               // Glassmorphism for today
-              'bg-gradient-to-r from-blue-500/15 to-cyan-500/10',
+              'bg-linear-to-r from-blue-500/15 to-cyan-500/10',
               'backdrop-blur-sm',
               'border border-blue-200/50 dark:border-blue-500/20',
               'shadow-[0_4px_12px_rgba(59,130,246,0.1),inset_0_1px_0_rgba(255,255,255,0.5)]',
@@ -205,7 +205,7 @@ function DailyItem({
               transition={{ duration: 0.5, delay: index * 0.05 + 0.2, ease: 'easeOut' }}
               className={cn(
                 'absolute h-full rounded-full origin-left',
-                'bg-gradient-to-r',
+                'bg-linear-to-r',
                 getBarGradient()
               )}
               style={{
