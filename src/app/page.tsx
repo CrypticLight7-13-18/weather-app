@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWeather, useHistoricalWeather, useGeolocation, useFavorites } from '@/hooks';
+import { useWeather, useHistoricalWeather, useGeolocation, useFavorites, useIsMobileOrTablet } from '@/hooks';
 import { useAppStore, useWeatherStore } from '@/stores';
-import { reverseGeocode } from '@/lib/api';
+import { reverseGeocode, fetchWeatherData } from '@/lib/api';
 import { Location } from '@/types/location';
+import { WeatherData } from '@/types/weather';
 import { cn } from '@/lib/utils';
 
 // Components
@@ -19,6 +20,8 @@ import {
   WeatherDetails,
   HistoricalChart,
   WorldClock,
+  MobileWeatherCarousel,
+  LocationListModal,
 } from '@/components/weather';
 import {
   ErrorState,
@@ -36,12 +39,27 @@ import {
 type LocationStatus = 'idle' | 'detecting' | 'geocoding' | 'success' | 'error';
 type RefreshStatus = 'idle' | 'refreshing' | 'success' | 'error';
 
+interface LocationWeatherState {
+  location: Location;
+  weather: WeatherData | null;
+  isLoading: boolean;
+  error: string | null;
+  isMyLocation?: boolean;
+}
+
 export default function HomePage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLocationListOpen, setIsLocationListOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [refreshStatus, setRefreshStatus] = useState<RefreshStatus>('idle');
+  const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
+  const [mobileLocations, setMobileLocations] = useState<LocationWeatherState[]>([]);
+  const [myLocation, setMyLocation] = useState<Location | null>(null);
   const locationToastId = useRef<string | null>(null);
+
+  // Check if mobile/tablet
+  const isMobileOrTablet = useIsMobileOrTablet();
 
   // Hooks
   const { weather, location, error, isLoading, loadWeather, refresh } = useWeather();
@@ -51,6 +69,88 @@ export default function HomePage() {
   const { settings, addToHistory, setFirstTimeUser, isFirstTimeUser } = useAppStore();
   const { reset: resetWeather } = useWeatherStore();
   const toast = useToast();
+  const appFavorites = useAppStore((state) => state.favorites);
+
+  // Build mobile locations array from my location + favorites
+  useEffect(() => {
+    const buildMobileLocations = async () => {
+      const locations: LocationWeatherState[] = [];
+
+      // Add "My Location" first if available
+      if (myLocation) {
+        const existingMyLoc = mobileLocations.find(l => l.isMyLocation);
+        locations.push({
+          location: myLocation,
+          weather: existingMyLoc?.weather || null,
+          isLoading: existingMyLoc?.isLoading ?? true,
+          error: existingMyLoc?.error || null,
+          isMyLocation: true,
+        });
+      }
+
+      // Add favorites (exclude if same location as "My Location" to avoid duplicates)
+      for (const fav of appFavorites) {
+        // Skip if this favorite is the same as "My Location"
+        if (myLocation && fav.id === myLocation.id) {
+          continue;
+        }
+        const existing = mobileLocations.find(l => l.location.id === fav.id && !l.isMyLocation);
+        locations.push({
+          location: fav,
+          weather: existing?.weather || null,
+          isLoading: existing?.isLoading ?? true,
+          error: existing?.error || null,
+          isMyLocation: false,
+        });
+      }
+
+      setMobileLocations(locations);
+    };
+
+    if (isMobileOrTablet) {
+      buildMobileLocations();
+    }
+    // Note: mobileLocations is intentionally excluded to preserve weather data when favorites change
+  }, [myLocation, appFavorites, isMobileOrTablet]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch weather for mobile locations - triggered when locations change
+  useEffect(() => {
+    const fetchMobileWeather = async () => {
+      if (!isMobileOrTablet || mobileLocations.length === 0) return;
+
+      // Find locations that need weather data
+      const locationsNeedingWeather = mobileLocations.filter(
+        loc => !loc.weather && !loc.error && loc.isLoading
+      );
+
+      if (locationsNeedingWeather.length === 0) return;
+
+      // Fetch weather for each location that needs it
+      for (const loc of locationsNeedingWeather) {
+        try {
+          const weatherData = await fetchWeatherData({
+            latitude: loc.location.latitude,
+            longitude: loc.location.longitude,
+            timezone: loc.location.timezone,
+          });
+          
+          setMobileLocations(prev => prev.map(l => 
+            l.location.id === loc.location.id && l.isMyLocation === loc.isMyLocation
+              ? { ...l, weather: weatherData, isLoading: false }
+              : l
+          ));
+        } catch {
+          setMobileLocations(prev => prev.map(l => 
+            l.location.id === loc.location.id && l.isMyLocation === loc.isMyLocation
+              ? { ...l, error: 'Failed to load weather', isLoading: false }
+              : l
+          ));
+        }
+      }
+    };
+
+    fetchMobileWeather();
+  }, [mobileLocations.length, isMobileOrTablet]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-detect location on first load
   useEffect(() => {
@@ -61,6 +161,7 @@ export default function HomePage() {
         try {
           const parsed = JSON.parse(storedLocation);
           loadWeather(parsed);
+          setMyLocation(parsed);
           setIsInitialized(true);
           return;
         } catch {
@@ -82,6 +183,7 @@ export default function HomePage() {
         const loc = await reverseGeocode(position.latitude, position.longitude);
         if (loc) {
           loadWeather(loc);
+          setMyLocation(loc);
           localStorage.setItem('weather-last-location', JSON.stringify(loc));
           setLocationStatus('success');
           toast.update(toastId, { 
@@ -99,7 +201,6 @@ export default function HomePage() {
         }
       } else {
         setLocationStatus('error');
-        // Show appropriate error message based on error type
         const errorMessages: Record<string, { message: string; description: string }> = {
           PERMISSION_DENIED: { 
             message: 'Location access denied', 
@@ -141,14 +242,12 @@ export default function HomePage() {
     if (location && weather) {
       localStorage.setItem('weather-last-location', JSON.stringify(location));
       
-      // Add to browsing history with weather summary
       addToHistory(location, {
         temperature: weather.current.temperature,
         weatherCode: weather.current.weatherCode,
         isDay: weather.current.isDay,
       });
 
-      // Mark as not first time user
       if (isFirstTimeUser) {
         setFirstTimeUser(false);
       }
@@ -168,12 +267,84 @@ export default function HomePage() {
   }, []);
 
   const handleSelectLocation = useCallback(
-    (loc: Location) => {
+    async (loc: Location) => {
       loadWeather(loc);
       setIsSearchOpen(false);
       toast.success('Location updated', loc.displayName);
+
+      // For mobile, add the location if it doesn't exist
+      if (isMobileOrTablet) {
+        // Check for existing location by ID or similar coordinates (within ~1km)
+        const existingIndex = mobileLocations.findIndex(l => {
+          if (l.location.id === loc.id) return true;
+          // Also check for very close coordinates (same location, different search result)
+          const latDiff = Math.abs(l.location.latitude - loc.latitude);
+          const lonDiff = Math.abs(l.location.longitude - loc.longitude);
+          return latDiff < 0.01 && lonDiff < 0.01; // ~1km tolerance
+        });
+        
+        if (existingIndex >= 0) {
+          // Location exists, navigate to it
+          setCurrentMobileIndex(existingIndex);
+        } else {
+          // Add new location to the list with loading state
+          const hasMyLocation = mobileLocations.some(l => l.isMyLocation);
+          const newIndex = hasMyLocation ? 1 : 0;
+          
+          // Generate a unique ID for this session to avoid key conflicts
+          const uniqueId = `${loc.id}-${Date.now()}`;
+          
+          setMobileLocations(prev => {
+            // Double-check no duplicate exists
+            const alreadyExists = prev.some(l => l.location.id === loc.id);
+            if (alreadyExists) {
+              return prev;
+            }
+            
+            const newLocation: LocationWeatherState = {
+              location: { ...loc, id: uniqueId },
+              weather: null,
+              isLoading: true,
+              error: null,
+              isMyLocation: false,
+            };
+            // Add after "My Location" if it exists, otherwise at the start
+            const myLocIndex = prev.findIndex(l => l.isMyLocation);
+            if (myLocIndex >= 0) {
+              const newList = [...prev];
+              newList.splice(myLocIndex + 1, 0, newLocation);
+              return newList;
+            }
+            return [newLocation, ...prev];
+          });
+          
+          // Navigate to the new location
+          setCurrentMobileIndex(newIndex);
+
+          // Immediately fetch weather for the new location
+          try {
+            const weatherData = await fetchWeatherData({
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              timezone: loc.timezone,
+            });
+            
+            setMobileLocations(prev => prev.map(l => 
+              l.location.id === uniqueId
+                ? { ...l, weather: weatherData, isLoading: false }
+                : l
+            ));
+          } catch {
+            setMobileLocations(prev => prev.map(l => 
+              l.location.id === uniqueId
+                ? { ...l, error: 'Failed to load weather', isLoading: false }
+                : l
+            ));
+          }
+        }
+      }
     },
-    [loadWeather, toast]
+    [loadWeather, toast, isMobileOrTablet, mobileLocations]
   );
 
   const handleDetectLocation = useCallback(async () => {
@@ -189,12 +360,32 @@ export default function HomePage() {
       const loc = await reverseGeocode(position.latitude, position.longitude);
       if (loc) {
         loadWeather(loc);
+        setMyLocation(loc);
         setLocationStatus('success');
         toast.update(toastId, { 
           type: 'success', 
           message: 'Location updated',
           description: loc.displayName 
         });
+
+        // Update mobile locations
+        if (isMobileOrTablet) {
+          setMobileLocations(prev => {
+            const updated = [...prev];
+            const myLocIndex = updated.findIndex(l => l.isMyLocation);
+            if (myLocIndex >= 0) {
+              updated[myLocIndex] = {
+                ...updated[myLocIndex],
+                location: loc,
+                weather: null,
+                isLoading: true,
+                error: null,
+              };
+            }
+            return updated;
+          });
+          setCurrentMobileIndex(0);
+        }
       } else {
         setLocationStatus('error');
         toast.update(toastId, { 
@@ -205,7 +396,6 @@ export default function HomePage() {
       }
     } else {
       setLocationStatus('error');
-      // Determine error type
       const errorMessages: Record<string, { message: string; description: string }> = {
         PERMISSION_DENIED: { 
           message: 'Location access denied', 
@@ -235,18 +425,40 @@ export default function HomePage() {
       });
     }
     
-    // Reset status after a delay
     setTimeout(() => setLocationStatus('idle'), 2000);
-  }, [getCurrentPosition, loadWeather, toast, geoErrorType]);
+  }, [getCurrentPosition, loadWeather, toast, geoErrorType, isMobileOrTablet]);
 
   const handleRefresh = useCallback(async () => {
-    if (!weather) return;
+    if (!weather && mobileLocations.length === 0) return;
     
     setRefreshStatus('refreshing');
     const toastId = toast.loading('Refreshing...', 'Fetching latest data');
     
     try {
-      await refresh();
+      if (isMobileOrTablet && mobileLocations.length > 0) {
+        // Refresh current mobile location
+        const currentLoc = mobileLocations[currentMobileIndex];
+        if (currentLoc) {
+          const weatherData = await fetchWeatherData({
+            latitude: currentLoc.location.latitude,
+            longitude: currentLoc.location.longitude,
+            timezone: currentLoc.location.timezone,
+          });
+          setMobileLocations(prev => {
+            const updated = [...prev];
+            updated[currentMobileIndex] = {
+              ...updated[currentMobileIndex],
+              weather: weatherData,
+              isLoading: false,
+              error: null,
+            };
+            return updated;
+          });
+        }
+      } else {
+        await refresh();
+      }
+      
       setRefreshStatus('success');
       toast.update(toastId, { 
         type: 'success', 
@@ -262,26 +474,227 @@ export default function HomePage() {
       });
     }
     
-    // Reset status after a delay
     setTimeout(() => setRefreshStatus('idle'), 2000);
-  }, [weather, refresh, toast]);
+  }, [weather, refresh, toast, isMobileOrTablet, mobileLocations, currentMobileIndex]);
+
+  const handleRemoveMobileLocation = useCallback((locationId: string) => {
+    setMobileLocations(prev => {
+      const index = prev.findIndex(l => l.location.id === locationId && !l.isMyLocation);
+      if (index === -1) return prev;
+      
+      const newList = prev.filter(l => l.location.id !== locationId || l.isMyLocation);
+      
+      // Adjust current index if needed
+      if (currentMobileIndex >= newList.length) {
+        setCurrentMobileIndex(Math.max(0, newList.length - 1));
+      } else if (currentMobileIndex > index) {
+        setCurrentMobileIndex(currentMobileIndex - 1);
+      }
+      
+      return newList;
+    });
+    // Also remove from favorites
+    useAppStore.getState().removeFavorite(locationId);
+    toast.success('Location removed');
+  }, [currentMobileIndex, toast]);
+
+  const handleReorderMobileLocations = useCallback((fromIndex: number, toIndex: number) => {
+    setMobileLocations(prev => {
+      const newList = [...prev];
+      const [removed] = newList.splice(fromIndex, 1);
+      newList.splice(toIndex, 0, removed);
+      
+      // Adjust current index to follow the moved item if it was selected
+      if (currentMobileIndex === fromIndex) {
+        setCurrentMobileIndex(toIndex);
+      } else if (fromIndex < currentMobileIndex && toIndex >= currentMobileIndex) {
+        setCurrentMobileIndex(currentMobileIndex - 1);
+      } else if (fromIndex > currentMobileIndex && toIndex <= currentMobileIndex) {
+        setCurrentMobileIndex(currentMobileIndex + 1);
+      }
+      
+      return newList;
+    });
+  }, [currentMobileIndex]);
 
   const showLoading = !isInitialized || (isLoading && !weather);
   const showError = error && !weather;
   const showEmpty = isInitialized && !weather && !isLoading && !error;
   const showContent = weather && location;
 
-  // Determine if we're in any loading state
   const isDetectingLocation = locationStatus === 'detecting' || locationStatus === 'geocoding';
   const isRefreshing = refreshStatus === 'refreshing' || (isLoading && !!weather);
 
+  // Get weather condition for background gradient
+  const getBackgroundGradient = () => {
+    if (!weather) return 'from-slate-800 to-slate-900';
+    
+    const code = weather.current.weatherCode;
+    const isDay = weather.current.isDay;
+    
+    // Clear/Sunny
+    if ([0, 1].includes(code)) {
+      return isDay 
+        ? 'from-sky-400 via-blue-500 to-blue-600' 
+        : 'from-indigo-900 via-slate-900 to-slate-950';
+    }
+    // Partly cloudy
+    if (code === 2) {
+      return isDay 
+        ? 'from-blue-400 via-slate-400 to-slate-500' 
+        : 'from-slate-700 via-slate-800 to-slate-900';
+    }
+    // Cloudy
+    if (code === 3) {
+      return 'from-slate-500 via-slate-600 to-slate-700';
+    }
+    // Rain
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
+      return 'from-slate-600 via-slate-700 to-slate-800';
+    }
+    // Snow
+    if ([71, 73, 75, 77, 85, 86].includes(code)) {
+      return 'from-slate-300 via-slate-400 to-slate-500';
+    }
+    // Thunderstorm
+    if ([95, 96, 99].includes(code)) {
+      return 'from-slate-700 via-purple-900 to-slate-900';
+    }
+    
+    return 'from-slate-700 to-slate-800';
+  };
+
+  // Mobile/Tablet View
+  if (isMobileOrTablet) {
+    const currentWeather = mobileLocations[currentMobileIndex]?.weather;
+    const mobileGradient = currentWeather 
+      ? getBackgroundGradient() 
+      : 'from-slate-800 to-slate-900';
+
+  return (
+      <div className={cn(
+        'min-h-screen transition-all duration-700 relative',
+        'bg-linear-to-b',
+        mobileGradient
+      )}>
+        <ToastContainer />
+
+        {/* Mobile header - simplified */}
+        <div className="fixed top-0 left-0 right-0 z-40 p-4 flex items-center justify-between">
+          <button
+            onClick={handleDetectLocation}
+            disabled={isDetectingLocation}
+            className={cn(
+              'p-2 rounded-full transition-colors',
+              'bg-white/10 hover:bg-white/20',
+              isDetectingLocation && 'animate-pulse'
+            )}
+          >
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Main content */}
+        <div className="pt-16">
+          {mobileLocations.length > 0 ? (
+            <MobileWeatherCarousel
+              locations={mobileLocations}
+              currentIndex={currentMobileIndex}
+              onIndexChange={setCurrentMobileIndex}
+              onAddLocation={() => setIsSearchOpen(true)}
+              onShowLocationList={() => setIsLocationListOpen(true)}
+              settings={settings}
+              historicalData={historicalData}
+              historicalStatus={historicalStatus}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
+              {showLoading ? (
+                <div className="space-y-4">
+                  <div className="w-20 h-20 rounded-full bg-white/10 animate-pulse" />
+                  <div className="w-40 h-6 bg-white/10 rounded animate-pulse" />
+                  <div className="w-32 h-4 bg-white/10 rounded animate-pulse" />
+                </div>
+              ) : (
+                <>
+                  <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-4">
+                    <svg className="w-10 h-10 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-medium text-white mb-2">No Location</h2>
+                  <p className="text-white/60 mb-6 max-w-xs">
+                    Search for a city or detect your location to see weather
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDetectLocation}
+                      disabled={isDetectingLocation}
+                      className={cn(
+                        'px-5 py-2.5 rounded-xl font-medium transition-colors',
+                        'bg-white/20 text-white hover:bg-white/30'
+                      )}
+                    >
+                      Detect Location
+                    </button>
+                    <button
+                      onClick={() => setIsSearchOpen(true)}
+                      className="px-5 py-2.5 rounded-xl font-medium bg-white text-slate-800 hover:bg-white/90 transition-colors"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Location list modal */}
+        <LocationListModal
+          isOpen={isLocationListOpen}
+          onClose={() => setIsLocationListOpen(false)}
+          locations={mobileLocations}
+          currentIndex={currentMobileIndex}
+          onSelectLocation={setCurrentMobileIndex}
+          onRemoveLocation={handleRemoveMobileLocation}
+          onReorderLocations={handleReorderMobileLocations}
+          onAddLocation={() => {
+            setIsLocationListOpen(false);
+            setIsSearchOpen(true);
+          }}
+          settings={settings}
+        />
+
+        {/* Search dialog */}
+        {isSearchOpen && (
+          <SearchDialog
+            onSelect={handleSelectLocation}
+            onClose={() => setIsSearchOpen(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop View (original)
   return (
     <div className={cn(
       'min-h-screen transition-colors duration-500 relative',
-      // Neumorphic background - clean, soft gray that matches shadows
       'bg-[#e8eef5] dark:bg-slate-900'
     )}>
-      {/* Toast notifications */}
       <ToastContainer />
 
       {/* Subtle ambient lighting effect */}
@@ -291,114 +704,107 @@ export default function HomePage() {
       </div>
 
       <div className="relative z-10">
-      <Header
-        onSearchClick={() => setIsSearchOpen(true)}
-        onRefresh={handleRefresh}
-        onDetectLocation={handleDetectLocation}
-        isRefreshing={isRefreshing}
-        isDetectingLocation={isDetectingLocation}
-        locationStatus={locationStatus}
-        refreshStatus={refreshStatus}
-      />
+        <Header
+          onSearchClick={() => setIsSearchOpen(true)}
+          onRefresh={handleRefresh}
+          onDetectLocation={handleDetectLocation}
+          isRefreshing={isRefreshing}
+          isDetectingLocation={isDetectingLocation}
+          locationStatus={locationStatus}
+          refreshStatus={refreshStatus}
+        />
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        {showLoading && <LoadingSkeleton />}
+        <main className="max-w-6xl mx-auto px-4 py-6">
+          {showLoading && <LoadingSkeleton />}
 
-        {showError && (
-          <div className="max-w-lg mx-auto py-12">
-            <ErrorState
-              error={error}
-              onRetry={() => {
-                resetWeather();
-                handleDetectLocation();
-              }}
-            />
-            {geoError && (
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
-                {geoError}
-              </p>
-            )}
-          </div>
-        )}
-
-        {showEmpty && (
-          <div className="max-w-lg mx-auto py-12">
-            <EmptyState
-              variant="location"
-              action={{
-                label: 'Search for a location',
-                onClick: () => setIsSearchOpen(true),
-              }}
-              secondaryAction={{
-                label: 'Detect my location',
-                onClick: handleDetectLocation,
-              }}
-            />
-          </div>
-        )}
-
-        {showContent && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main content column */}
-            <div className="lg:col-span-2 space-y-6">
-              <CurrentWeather
-                weather={weather}
-                location={location}
-                settings={settings}
+          {showError && (
+            <div className="max-w-lg mx-auto py-12">
+              <ErrorState
+                error={error}
+                onRetry={() => {
+                  resetWeather();
+                  handleDetectLocation();
+                }}
               />
+              {geoError && (
+                <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
+                  {geoError}
+                </p>
+              )}
+            </div>
+          )}
 
-              <HourlyForecast
-                hourly={weather.hourly}
-                temperatureUnit={settings.temperatureUnit}
+          {showEmpty && (
+            <div className="max-w-lg mx-auto py-12">
+              <EmptyState
+                variant="location"
+                action={{
+                  label: 'Search for a location',
+                  onClick: () => setIsSearchOpen(true),
+                }}
+                secondaryAction={{
+                  label: 'Detect my location',
+                  onClick: handleDetectLocation,
+                }}
               />
+        </div>
+          )}
 
-              <DailyForecast
-                daily={weather.daily}
-                temperatureUnit={settings.temperatureUnit}
-              />
-
-              <WeatherDetails
-                current={weather.current}
-                settings={settings}
-              />
-
-              {/* Historical chart */}
-              {historicalData && historicalStatus === 'success' && (
-                <HistoricalChart
-                  data={historicalData}
+          {showContent && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main content column */}
+              <div className="lg:col-span-2 space-y-6">
+                <CurrentWeather
+                  weather={weather}
+                  location={location}
                   settings={settings}
                 />
-              )}
-              {historicalStatus === 'loading' && (
-                <Card>
-                  <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
-                  <SkeletonChart />
-                </Card>
-              )}
-            </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* World Clock */}
-              <WorldClock />
+                <HourlyForecast
+                  hourly={weather.hourly}
+                  temperatureUnit={settings.temperatureUnit}
+                />
 
-              {/* Favorites */}
-              <FavoritesPanel onSelect={handleSelectLocation} />
+                <DailyForecast
+                  daily={weather.daily}
+                  temperatureUnit={settings.temperatureUnit}
+                />
 
-              {/* Recently Viewed History */}
-              <HistoryPanelCompact onSelect={handleSelectLocation} />
-            </div>
-          </div>
-        )}
+                <WeatherDetails
+                  current={weather.current}
+                  settings={settings}
+                />
+
+                {historicalData && historicalStatus === 'success' && (
+                  <HistoricalChart
+                    data={historicalData}
+                    settings={settings}
+                  />
+                )}
+                {historicalStatus === 'loading' && (
+                  <Card>
+                    <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
+                    <SkeletonChart />
+                  </Card>
+                )}
+              </div>
+
+              {/* Sidebar - Desktop only */}
+              <div className="space-y-6">
+                <WorldClock />
+                <FavoritesPanel onSelect={handleSelectLocation} />
+                <HistoryPanelCompact onSelect={handleSelectLocation} />
+              </div>
+        </div>
+          )}
       </main>
 
-      {/* Search dialog */}
-      {isSearchOpen && (
-        <SearchDialog
-          onSelect={handleSelectLocation}
-          onClose={() => setIsSearchOpen(false)}
-        />
-      )}
+        {isSearchOpen && (
+          <SearchDialog
+            onSelect={handleSelectLocation}
+            onClose={() => setIsSearchOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
