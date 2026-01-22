@@ -237,6 +237,7 @@ const location = await reverseGeocode(40.7128, -74.006);
 ## Testing
 
 The application includes a comprehensive three-layer testing strategy:
+
 - **Unit tests** (Vitest + MSW) - Fast, deterministic tests with mocked APIs
 - **Integration tests** (UI Test Runner) - Real API verification
 - **E2E tests** (Playwright) - Full browser automation for user flows
@@ -301,6 +302,7 @@ afterAll(() => server.close());
 ```
 
 This configuration:
+
 - Starts MSW server before all tests
 - Resets handlers between tests (isolation)
 - Fails on unhandled requests (catches missing mocks)
@@ -346,6 +348,7 @@ export const errorHandlers = {
 Tests the centralized fetch client that all API calls flow through.
 
 **Successful Requests (3 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should fetch and parse JSON data successfully` | Basic request/response cycle works |
@@ -353,6 +356,7 @@ Tests the centralized fetch client that all API calls flow through.
 | `should use default timeout of 10 seconds` | Timeout configuration is applied |
 
 **HTTP Error Handling (7 tests)**
+
 | Test | Status Code | Expected Error Type |
 |------|-------------|---------------------|
 | `should handle 400 Bad Request` | 400 | `INVALID_DATA` |
@@ -364,6 +368,7 @@ Tests the centralized fetch client that all API calls flow through.
 | `should handle unknown HTTP status codes` | 418 | `UNKNOWN_ERROR` |
 
 **Network Error Handling (3 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should handle network failures` | Catches fetch failures gracefully |
@@ -371,12 +376,14 @@ Tests the centralized fetch client that all API calls flow through.
 | `should handle custom timeout values` | Per-request timeout override works |
 
 **JSON Parsing (2 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should handle invalid JSON response` | Malformed JSON doesn't crash |
 | `should handle empty response body` | Empty responses handled gracefully |
 
 **Error Simulation (4 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should set and get simulated error` | Error simulation state management |
@@ -389,6 +396,7 @@ Tests the centralized fetch client that all API calls flow through.
 Tests the Open-Meteo API integration and data transformation.
 
 **Successful Requests (8 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should fetch weather data for valid coordinates` | Basic fetch works |
@@ -401,6 +409,7 @@ Tests the Open-Meteo API integration and data transformation.
 | `should always request metric units` | Consistent unit requests |
 
 **Error Handling (4 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should handle missing current data` | Partial response handling |
@@ -409,6 +418,7 @@ Tests the Open-Meteo API integration and data transformation.
 | `should handle simulated errors` | Dev error simulation works |
 
 **Data Validation (3 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should handle null values in response` | Null → default value fallback |
@@ -416,6 +426,7 @@ Tests the Open-Meteo API integration and data transformation.
 | `should validate weather codes are numbers` | Type checking on codes |
 
 **Historical Data (6 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should fetch historical data` | Archive API works |
@@ -430,6 +441,7 @@ Tests the Open-Meteo API integration and data transformation.
 Tests the Nominatim geocoding integration.
 
 **Input Validation (4 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should return empty array for empty query` | Empty string handling |
@@ -438,6 +450,7 @@ Tests the Nominatim geocoding integration.
 | `should trim whitespace from query` | Input sanitization |
 
 **Successful Search (6 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should search and return results` | Basic search works |
@@ -448,6 +461,7 @@ Tests the Nominatim geocoding integration.
 | `should filter for valid place types` | Only cities/towns returned |
 
 **Reverse Geocoding (5 tests)**
+
 | Test | What it verifies |
 |------|-----------------|
 | `should reverse geocode coordinates` | Lat/lon → location name |
@@ -457,6 +471,7 @@ Tests the Nominatim geocoding integration.
 | `should return basic location on error` | Fallback behavior |
 
 **Edge Cases (14 tests)**
+
 - Empty results handling
 - Duplicate coordinate filtering
 - Display name formatting
@@ -478,11 +493,13 @@ The UI test runner at `/tests` makes **real API calls** to verify external servi
 #### Test Categories (16 tests total)
 
 **API Client (3 tests)**
+
 - Successful API request to Open-Meteo
 - Invalid coordinates rejection (400 error)
 - Request timeout behavior
 
 **Weather API (5 tests)**
+
 - Fetch current weather structure
 - Fetch 48-hour hourly forecast
 - Fetch 7-day daily forecast
@@ -490,30 +507,36 @@ The UI test runner at `/tests` makes **real API calls** to verify external servi
 - Timezone handling
 
 **Geocoding (3 tests)**
+
 - Location search ("London")
 - Reverse geocoding (coordinates → city name)
 - Empty results for non-existent locations
 
 **Historical API (1 test)**
+
 - Fetch 30 days of historical data
 
 **Error Handling (2 tests)**
+
 - Network error detection (invalid domain)
 - Invalid JSON handling
 
 **Data Validation (2 tests)**
+
 - Coordinate precision in response
 - Weather code range validation (0-99)
 
 #### When to Use Integration Tests
 
 ✅ **Use integration tests when:**
+
 - Deploying to production (smoke test)
 - Debugging API-related issues
 - Verifying after API provider changes
 - Testing from different networks/regions
 
 ❌ **Don't rely on integration tests for:**
+
 - CI/CD pipelines (flaky due to network)
 - Rapid development iteration (too slow)
 - Testing error scenarios (can't force errors)
@@ -651,6 +674,28 @@ npm run e2e:debug
 npm run e2e:report
 ```
 
+#### Corporate Network / Proxy Workaround
+
+If you're running Playwright tests behind a corporate proxy (e.g., with Microsoft SSO authentication), the isolated Chromium browser launched by Playwright won't have your stored proxy credentials. This causes external API calls to be intercepted by the proxy login page.
+
+**Solution:** Set the `NO_PROXY` environment variable to bypass the proxy for required domains:
+
+**PowerShell (Windows):**
+
+```powershell
+$env:NO_PROXY = "localhost,127.0.0.1"
+npx playwright test
+```
+
+**Bash (macOS/Linux):**
+
+```bash
+NO_PROXY="localhost,127.0.0.1" 
+npx playwright test
+```
+
+**Why this happens:** Your regular browser has cached proxy authentication tokens, but Playwright launches a fresh, isolated browser instance without any stored credentials or cookies.
+
 #### E2E Test File Structure
 
 ```
@@ -668,6 +713,7 @@ e2e/
 #### Test Categories & Coverage
 
 **Home Page (`home.spec.ts`)**
+
 - Page load and initial state
 - Header with logo and controls
 - Theme toggle functionality
@@ -675,6 +721,7 @@ e2e/
 - Accessibility (keyboard navigation, focus)
 
 **Search (`search.spec.ts`)**
+
 - Opening search dialog
 - Searching for locations
 - Selecting search results
@@ -682,6 +729,7 @@ e2e/
 - Empty/invalid search handling
 
 **Settings (`settings.spec.ts`)**
+
 - Opening settings panel
 - Temperature unit toggle (°C/°F)
 - Wind speed units (km/h, mph, m/s, kn)
@@ -690,6 +738,7 @@ e2e/
 - Settings persistence after reload
 
 **Favorites (`favorites.spec.ts`)**
+
 - Adding locations to favorites
 - Removing favorites
 - Empty state display
@@ -697,6 +746,7 @@ e2e/
 - Quick access to favorited locations
 
 **Weather Display (`weather-display.spec.ts`)**
+
 - Current weather card
 - Temperature display
 - Weather icons
@@ -705,6 +755,7 @@ e2e/
 - Weather details (humidity, wind, UV, pressure)
 
 **Navigation (`navigation.spec.ts`)**
+
 - Navigate to /docs
 - Navigate to /tests
 - Settings popover navigation links
@@ -712,6 +763,7 @@ e2e/
 - Page transitions
 
 **History (`history.spec.ts`)**
+
 - History section display
 - Recording viewed locations
 - History persistence
@@ -719,6 +771,7 @@ e2e/
 - History size limits
 
 **World Clock (`world-clock.spec.ts`)**
+
 - World clock display
 - User's local time
 - Adding cities
@@ -779,11 +832,13 @@ test.describe('Feature Name', () => {
 #### Debugging Failed Tests
 
 When a test fails, Playwright provides:
+
 - **Screenshots** - Captured at failure point
 - **Videos** - Full test recording (on retry)
 - **Traces** - Step-by-step timeline with DOM snapshots
 
 To view:
+
 ```bash
 npm run e2e:report
 ```
@@ -793,6 +848,7 @@ This opens an HTML report with all artifacts.
 #### CI/CD Integration
 
 For continuous integration:
+
 ```yaml
 # Example GitHub Actions
 - name: Install Playwright
@@ -809,23 +865,40 @@ For continuous integration:
 ### Troubleshooting Tests
 
 **Tests fail with "unhandled request"**
+
 - Add missing mock handler in `handlers.ts`
 - Check URL matches exactly (including query params)
 
 **Tests pass locally but fail in CI**
+
 - Ensure `setup.ts` is in `setupFiles`
 - Check Node version matches
 - Verify no time-dependent assertions
 
 **Integration tests timeout**
+
 - Check network connectivity
 - Increase timeout if API is slow
 - Verify API endpoints haven't changed
 
 **MSW not intercepting requests**
+
 - Ensure server is started (`server.listen()`)
 - Check request URL matches handler pattern
 - Verify no typos in API URLs
+
+**E2E tests show Microsoft/SSO login page (corporate network)**
+
+- Playwright uses an isolated browser without your proxy credentials
+- Set `NO_PROXY` environment variable before running tests:
+
+  ```powershell
+  # PowerShell
+  $env:NO_PROXY = "localhost,127.0.0.1"
+  npx playwright test
+  ```
+
+- Alternatively, configure API mocking in Playwright tests for CI environments
 
 ## Keyboard Shortcuts
 

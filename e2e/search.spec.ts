@@ -18,8 +18,8 @@ test.describe('Search Functionality', () => {
   });
 
   test('should open search dialog when search button is clicked', async ({ page }) => {
-    // Find and click the search button
-    const searchButton = page.getByRole('button', { name: /search/i });
+    // Find and click the header search button (the search bar, not empty state button)
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     // Verify search dialog opens
@@ -29,7 +29,7 @@ test.describe('Search Functionality', () => {
 
   test('should have a search input in the dialog', async ({ page }) => {
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     // Wait for dialog
@@ -42,7 +42,7 @@ test.describe('Search Functionality', () => {
 
   test('should search for a location and show results', async ({ page }) => {
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);
@@ -69,7 +69,7 @@ test.describe('Search Functionality', () => {
 
   test('should close search dialog when pressing Escape', async ({ page }) => {
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);
@@ -88,7 +88,7 @@ test.describe('Search Functionality', () => {
 
   test('should select a location from search results', async ({ page }) => {
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);
@@ -122,7 +122,7 @@ test.describe('Search Functionality', () => {
 
   test('should handle empty search gracefully', async ({ page }) => {
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);
@@ -145,7 +145,7 @@ test.describe('Search - Keyboard Navigation', () => {
     await page.waitForTimeout(1000);
     
     // Open search dialog
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);

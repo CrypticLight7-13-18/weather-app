@@ -29,8 +29,8 @@ test.describe('Home Page', () => {
     const header = page.locator('header');
     await expect(header).toBeVisible();
     
-    // Check for search button
-    const searchButton = page.getByRole('button', { name: /search/i });
+    // Check for search button (header search bar)
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await expect(searchButton).toBeVisible();
     
     // Check for theme toggle button

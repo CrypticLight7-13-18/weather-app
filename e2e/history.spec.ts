@@ -17,17 +17,14 @@ test.describe('Browsing History', () => {
   });
 
   test('should display history section', async ({ page }) => {
-    // Look for history section
-    const historySection = page.locator('text=/history|recently.*viewed|recent/i');
-    const count = await historySection.count();
-    
-    // History section should exist
+    // Look for history section - check main content is visible
+    // History section may not appear until user has viewed locations
     await expect(page.locator('main')).toBeVisible();
   });
 
   test('should show recently viewed locations after searching', async ({ page }) => {
     // Open search and search for a location
-    const searchButton = page.getByRole('button', { name: /search/i });
+    const searchButton = page.getByRole('button', { name: /search for a city/i });
     await searchButton.click();
     
     await page.waitForTimeout(500);
