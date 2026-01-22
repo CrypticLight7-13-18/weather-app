@@ -1,6 +1,6 @@
 # Weather App
 
-A production-grade weather application built with Next.js 14+, featuring beautiful UI, comprehensive error handling, and performant architecture.
+A application built with Next.js 14+, featuring beautiful UI, comprehensive error handling, and performant architecture.
 
 ![Weather App Screenshot](./public/screenshot.png)
 
